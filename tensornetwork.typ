@@ -1,4 +1,5 @@
 #import "@preview/cetz:0.3.4": canvas,draw
+#set page(width: auto, height: auto, margin: 5pt)
 
 #figure(canvas({
   import draw: *
@@ -94,7 +95,7 @@
   line("rect-label",(rel: (0, 1), to: "rect-label"), stroke: black)
   content((rel: (3, -0.2), to: "rect-label"), text(25pt)[$= mat(p_I, p_Z ;p_X, p_Y)$])
 
-  rect((8 - r, 0), ( 8 + r, 2 * r), fill: purple, stroke: black, name: "check-label")
+  rect((7 - r, 0), ( 7 + r, 2 * r), fill: purple, stroke: black, name: "check-label")
 
   line("check-label",(rel: (0, 1.2), to: "check-label"), stroke: black)
   content((rel: (0, 1.6), to: "check-label"), text(15pt)[$j_1$])
@@ -112,6 +113,6 @@
 
   content((rel: (2.1, 0.2), to: "check-label"), text(30pt)[$:$])
 
-  content((rel: (7.1, 0), to: "check-label"), text(18pt)[$T_(j_1 j_2 j_3...j_k) = (j_1 + j_2 + ... + j_k) % 2
+  content((rel: (7.6, 0), to: "check-label"), text(18pt)[$T_(j_1 j_2 j_3...j_k) = (1 + j_1 + j_2 + ... + j_k) % 2
  $])
 }))
