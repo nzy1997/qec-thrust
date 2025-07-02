@@ -83,3 +83,35 @@
   rect((8 - r, -8), (8 + r, -8 + 2 * r), fill: purple, stroke: black, name: "check-label")
   content((rel: (0, -1), to: "check-label"), [Parity Tensor])
 }))
+
+
+#figure(canvas({
+  import draw: *
+
+  let r = 0.5
+  rect((0 - r, 0), ( r, 2 * r), fill: green, stroke: black, name: "rect-label")
+  line("rect-label",(rel: (0, -1), to: "rect-label"), stroke: black)
+  line("rect-label",(rel: (0, 1), to: "rect-label"), stroke: black)
+  content((rel: (3, -0.2), to: "rect-label"), text(25pt)[$= mat(p_I, p_Z ;p_X, p_Y)$])
+
+  rect((8 - r, 0), ( 8 + r, 2 * r), fill: purple, stroke: black, name: "check-label")
+
+  line("check-label",(rel: (0, 1.2), to: "check-label"), stroke: black)
+  content((rel: (0, 1.6), to: "check-label"), text(15pt)[$j_1$])
+
+  line("check-label",(rel: (1.2, 0), to: "check-label"), stroke: black)
+  content((rel: (1.6, 0), to: "check-label"), text(15pt)[$j_2$])
+
+  line("check-label",(rel: (1, -1), to: "check-label"), stroke: black)
+  content((rel: (1.4, -1.4), to: "check-label"), text(15pt)[$j_3$])
+
+  line("check-label",(rel: (-1, -1), to: "check-label"), stroke: black)
+  content((rel: (-1.4, -1.4), to: "check-label"), text(15pt)[$j_k$])
+
+  content((rel: (0, -1.1), to: "check-label"), text(25pt)[$...$])
+
+  content((rel: (2.1, 0.2), to: "check-label"), text(30pt)[$:$])
+
+  content((rel: (7.1, 0), to: "check-label"), text(18pt)[$T_(j_1 j_2 j_3...j_k) = (j_1 + j_2 + ... + j_k) % 2
+ $])
+}))
