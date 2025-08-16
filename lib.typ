@@ -1,4 +1,4 @@
-#import "@preview/cetz:0.3.4": canvas,draw
+#import "@preview/cetz:0.4.0": canvas,draw
 
 #let steane-code(loc,size:4, color1:yellow, color2:aqua,color3:olive,name: "steane",point-radius:0.1) = {
   import draw: *
