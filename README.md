@@ -1,13 +1,13 @@
 # Visualization of Quantum Error Correction Codes
 This is a Typst package for visualizing quantum error correction codes.
 
-**Note: Requires CeTZ version >= 0.3 and compiler version >= 0.13**
+**Note: Requires CeTZ version >= 0.4.0 and compiler version >= 0.13**
 
 
 ## Steane code
 You can draw a Steane code by calling the `steane-code` function. The name of the qubits are automatically generated as `steane-1`, `steane-2`, etc.
 ```java
-#import "@preview/qec-thrust:0.1.0": *
+#import "@preview/qec-thrust:0.1.1": *
 
 #canvas({
   import draw: *
@@ -20,7 +20,7 @@ You can draw a Steane code by calling the `steane-code` function. The name of th
 ![Steane code](examples/steane.png)
 
 ## Surface code
-You can draw a surface code with different size, color and orientation by `surfacecode` function. The name of the qubits can be defined with `name` parameter as `name-i-j`. By default, they will be named as `surface-i-j`. The `type-tag` parameter can be set to `false` to change the orientation of the surface code. Here is an example of two surface codes.
+You can draw a surface code with different size, color and orientation by `surface-code` function. The name of the qubits can be defined with `name` parameter as `name-i-j`. By default, they will be named as `surface-i-j`. The `type-tag` parameter can be set to `false` to change the orientation of the surface code. You can also tweak `point-radius` (relative to `size`) and `boundary-bulge` for the boundary curves. Here is an example of two surface codes.
 ```java
 #canvas({
   import draw: *
@@ -71,6 +71,10 @@ You can draw a toric code with different size and color by `toric-code` function
 })
 ```
 ![BB code](examples/toric2.png)
+
+## Notes
+- If you draw multiple codes of the same type in one canvas, set a unique `name` prefix to avoid anchor collisions.
+- `surface-code` uses +y upward, while `toric-code` uses -y downward (grid grows down).
 ## License
 
 Licensed under the [MIT License](LICENSE).

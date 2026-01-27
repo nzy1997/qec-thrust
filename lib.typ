@@ -18,12 +18,25 @@
   }
 }
 
-#let surface-code(loc, m, n, size:1, color1:yellow, color2:aqua, name: "surface", type-tag:true) = {
+#let surface-code(
+  loc,
+  m,
+  n,
+  size: 1,
+  color1: yellow,
+  color2: aqua,
+  name: "surface",
+  type-tag: true,
+  point-radius: 0.08,
+  boundary-bulge: 0.7,
+) = {
   import draw: *
-  for i in range(m){
-    for j in range(n){
-      let x = loc.at(0) + i * size
-      let y = loc.at(1) + j * size
+  let x0 = loc.at(0)
+  let y0 = loc.at(1)
+  for i in range(m) {
+    for j in range(n) {
+      let x = x0 + i * size
+      let y = y0 + j * size
       if (i != m - 1) and (j != n - 1) {
         // determine the color of the plaquette
         let (colora, colorb) = if (calc.rem(i + j, 2) == 0) {
@@ -33,23 +46,23 @@
         }
         // four types of boundary plaquettes
         if type-tag == (calc.rem(i + j, 2) == 0) {
-          if (i == 0) {
-              bezier((x, y), (x, y + size), (x - size * 0.7, y + size/2), fill: colorb, stroke: black)
+            if (i == 0) {
+              bezier((x, y), (x, y + size), (x - size * boundary-bulge, y + size/2), fill: colorb, stroke: black)
             }
             if (i == m - 2) {
-              bezier((x + size, y), (x + size, y + size), (x + size * 1.7, y + size/2), fill: colorb, stroke: black)
+              bezier((x + size, y), (x + size, y + size), (x + size * (1 + boundary-bulge), y + size/2), fill: colorb, stroke: black)
             }
           } else {
             if (j == 0) {
-              bezier((x, y), (x + size, y), (x + size/2, y - size * 0.7), fill: colorb, stroke: black)
+              bezier((x, y), (x + size, y), (x + size/2, y - size * boundary-bulge), fill: colorb, stroke: black)
             }
             if (j == n - 2) {
-              bezier((x, y + size), (x + size, y + size), (x + size/2, y + size * 1.7), fill: colorb, stroke: black)
+              bezier((x, y + size), (x + size, y + size), (x + size/2, y + size * (1 + boundary-bulge)), fill: colorb, stroke: black)
             }
           }
           rect((x, y), (x + size, y + size), fill: colora, stroke: black, name: name + "-square" + "-" + str(i) + "-" + str(j))
       }
-      circle((x, y), radius: 0.08 * size, fill: black, stroke: none, name: name + "-" + str(i) + "-" + str(j))
+      circle((x, y), radius: point-radius * size, fill: black, stroke: none, name: name + "-" + str(i) + "-" + str(j))
     }
     }
   }
