@@ -72,6 +72,113 @@ You can draw a toric code with different size and color by `toric-code` function
 ```
 ![BB code](examples/toric2.png)
 
+## 2D color code
+Use `color-code-2d` to draw 2D color code patches. Control the tiling with `tiling`, the shape with `shape` (`rect`, `tri`, `tri-cut`, or `para`), and the size with a `size` dictionary. For `tiling: "6.6.6"`, set `hex-orientation` to `"flat"` or `"pointy"` (`tri-cut` requires `"flat"`). Set `show-stabilizers: true` to overlay X/Z markers. (Currently `tiling: "6.6.6"`, `tiling: "4.6.12"`, and `tiling: "4.8.8"` are implemented; `4.6.12` and `4.8.8` support `shape: "rect"` only.)
+```java
+#canvas({
+  import draw: *
+  let qubit-radius = 0.1
+  color-code-2d(
+    (0, 0),
+    tiling: "6.6.6",
+    shape: "rect",
+    size: (rows: 4, cols: 4),
+    hex-orientation: "flat",
+    scale: 1.2,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    name: "color-rect",
+    show-qubits: true,
+    qubit-radius: qubit-radius,
+  )
+  color-code-2d(
+    (0, -9),
+    tiling: "6.6.6",
+    shape: "tri",
+    size: (n: 4),
+    hex-orientation: "pointy",
+    scale: 1.2,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    name: "color-tri",
+    show-qubits: true,
+    qubit-radius: qubit-radius,
+  )
+  color-code-2d(
+    (9, 0),
+    tiling: "6.6.6",
+    shape: "para",
+    size: (rows: 4, cols: 4),
+    hex-orientation: "pointy",
+    scale: 1.2,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    name: "color-para",
+    show-qubits: true,
+    qubit-radius: qubit-radius,
+  )
+  color-code-2d(
+    (9, -10),
+    tiling: "6.6.6",
+    shape: "tri-cut",
+    size: (n: 3),
+    hex-orientation: "flat",
+    scale: 1.0,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    name: "color-tri-cut",
+    show-qubits: true,
+    qubit-radius: qubit-radius,
+  )
+})
+```
+![2D color code](examples/color_code_666.png)
+
+## 2D color code (4.8.8)
+```java
+#canvas({
+  import draw: *
+  color-code-2d(
+    (0, 0),
+    tiling: "4.8.8",
+    shape: "rect",
+    size: (rows: 4, cols: 4),
+    scale: 0.8,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    name: "color-488",
+    show-qubits: true,
+    qubit-radius: 0.1,
+  )
+})
+```
+![2D color code 4.8.8](examples/color_code_488.png)
+
+## 2D color code (4.6.12)
+```java
+#canvas({
+  import draw: *
+  color-code-2d(
+    (0, 0),
+    tiling: "4.6.12",
+    shape: "rect",
+    size: (rows: 6, cols: 6),
+    scale: 0.6,
+    color1: yellow,
+    color2: aqua,
+    color3: olive,
+    show-qubits: true,
+    qubit-radius: 0.2,
+  )
+})
+```
+![2D color code 4.6.12](examples/color_code_4612.png)
+
 ## Notes
 - If you draw multiple codes of the same type in one canvas, set a unique `name` prefix to avoid anchor collisions.
 - `surface-code` uses +y upward, while `toric-code` uses -y downward (grid grows down).
