@@ -586,6 +586,7 @@
 
   let all-corners = (0, 1, 2, 3, 4, 5)
   let face-seeds = ()
+  let hex-bounds = none
 
   if shape == "rect" {
     assert(size.rows != none and size.cols != none, message: "shape \"rect\" requires size: (rows: ..., cols: ...).")
@@ -641,6 +642,48 @@
           kind: "hex",
           meta: (shape: "tri", row: row, col: col),
         ),)
+      }
+    }
+  } else if shape == "hex" {
+    assert(type(size) == dictionary and size.lx != none and size.ly != none and size.lz != none, message: "shape \"hex\" requires size: (lx: ..., ly: ..., lz: ...).")
+    assert(size.lx > 0 and size.ly > 0 and size.lz > 0, message: "shape \"hex\" requires positive lx, ly, lz.")
+    let lx = size.lx
+    let ly = size.ly
+    let lz = size.lz
+
+    let x-min = -(ly - 1)
+    let x-max = lz - 1
+    let y-min = -(lz - 1)
+    let y-max = lx - 1
+    let z-min = -(lx - 1)
+    let z-max = ly - 1
+    hex-bounds = (
+      "x+": x-max,
+      "y+": y-max,
+      "z+": z-max,
+      "x-": x-min,
+      "y-": y-min,
+      "z-": z-min,
+    )
+
+    for aq in range(x-min, x-max + 1) {
+      for ar in range(z-min, z-max + 1) {
+        let x = aq
+        let z = ar
+        let y = -x - z
+        if y >= y-min and y <= y-max {
+          let center = axial-to-center(aq, ar)
+          let verts = all-corners.map((corner) => add(center, vertex-offsets.at(corner)))
+          face-seeds += ((
+            aq: aq,
+            ar: ar,
+            center: center,
+            vertices: verts,
+            "qubit-corners": all-corners,
+            kind: "hex",
+            meta: (shape: "hex", cube: (x: x, y: y, z: z)),
+          ),)
+        }
       }
     }
   } else if shape == "tri-cut" {
@@ -746,10 +789,15 @@
   let qubit-by-key = (:)
   let qubit-by-id = (:)
   let qubit-order = ()
+  let face-cube-by-id = (:)
   let faces = ()
 
   for seed in face-seeds {
     let face-id = "f-" + str(seed.aq) + "-" + str(seed.ar)
+    let cube-x = seed.aq
+    let cube-z = seed.ar
+    let cube-y = -cube-x - cube-z
+    face-cube-by-id.insert(face-id, (x: cube-x, y: cube-y, z: cube-z))
     let ckey = center-key(seed.aq, seed.ar)
     let face-qubits = ()
     for corner in seed.at("qubit-corners") {
@@ -794,6 +842,7 @@
       meta: (
         aq: seed.aq,
         ar: seed.ar,
+        cube: (x: cube-x, y: cube-y, z: cube-z),
         color-index: color-index,
         shape: shape,
         source: seed.meta,
@@ -801,10 +850,50 @@
     ))
   }
 
+  let boundary-x-plus = ()
+  let boundary-y-plus = ()
+  let boundary-z-plus = ()
+  let boundary-x-minus = ()
+  let boundary-y-minus = ()
+  let boundary-z-minus = ()
   for qid in qubit-order {
     let qubit = qubit-by-id.at(qid)
     let degree = qubit.at("incident-faces").len()
-    let boundary-tags = if degree < 3 { ("boundary",) } else { () }
+    let boundary-tags = if degree < 3 and shape == "hex" and hex-bounds != none {
+      let tags = ()
+      let on-x-plus = false
+      let on-y-plus = false
+      let on-z-plus = false
+      let on-x-minus = false
+      let on-y-minus = false
+      let on-z-minus = false
+      for fid in qubit.at("incident-faces") {
+        let cube = face-cube-by-id.at(fid)
+        if cube.x == hex-bounds.at("x+") { on-x-plus = true }
+        if cube.y == hex-bounds.at("y+") { on-y-plus = true }
+        if cube.z == hex-bounds.at("z+") { on-z-plus = true }
+        if cube.x == hex-bounds.at("x-") { on-x-minus = true }
+        if cube.y == hex-bounds.at("y-") { on-y-minus = true }
+        if cube.z == hex-bounds.at("z-") { on-z-minus = true }
+      }
+      if on-x-plus { tags = append-unique(tags, "x+") }
+      if on-y-plus { tags = append-unique(tags, "y+") }
+      if on-z-plus { tags = append-unique(tags, "z+") }
+      if on-x-minus { tags = append-unique(tags, "x-") }
+      if on-y-minus { tags = append-unique(tags, "y-") }
+      if on-z-minus { tags = append-unique(tags, "z-") }
+      tags
+    } else if degree < 3 {
+      ("boundary",)
+    } else {
+      ()
+    }
+    if "x+" in boundary-tags { boundary-x-plus = append-unique(boundary-x-plus, qid) }
+    if "y+" in boundary-tags { boundary-y-plus = append-unique(boundary-y-plus, qid) }
+    if "z+" in boundary-tags { boundary-z-plus = append-unique(boundary-z-plus, qid) }
+    if "x-" in boundary-tags { boundary-x-minus = append-unique(boundary-x-minus, qid) }
+    if "y-" in boundary-tags { boundary-y-minus = append-unique(boundary-y-minus, qid) }
+    if "z-" in boundary-tags { boundary-z-minus = append-unique(boundary-z-minus, qid) }
     qubit-by-id.insert(qid, (
       id: qubit.id,
       pos: qubit.pos,
@@ -819,13 +908,26 @@
 
   let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
   let boundary-qubits = qubits.filter((qubit) => qubit.at("boundary-tags").len() > 0).map((qubit) => qubit.id)
+  let boundaries = if shape == "hex" and hex-bounds != none {
+    (
+      qubits: boundary-qubits,
+      "x+": boundary-x-plus,
+      "y+": boundary-y-plus,
+      "z+": boundary-z-plus,
+      "x-": boundary-x-minus,
+      "y-": boundary-y-minus,
+      "z-": boundary-z-minus,
+    )
+  } else {
+    (
+      qubits: boundary-qubits,
+    )
+  }
 
   (
     faces: faces,
     qubits: qubits,
-    boundaries: (
-      qubits: boundary-qubits,
-    ),
+    boundaries: boundaries,
     basis: (
       hex-orientation: hex-orientation,
       scale: scale,
