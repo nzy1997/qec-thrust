@@ -68,7 +68,7 @@
   }
 }
 
-#let color-code-2d(
+#let color-code-2d-render(
   loc,
   tiling: "6.6.6",
   shape: "rect",
@@ -137,12 +137,12 @@
           name: name + "-face-" + str(q) + "-" + str(r),
         )
         if show-qubits {
-          circle((x, y + s), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x + diag, y + half), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x + diag, y - half), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x, y - s), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x - diag, y - half), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x - diag, y + half), radius: qubit-r, fill: qubit-color, stroke: none)
+          circle((x, y + s), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-0")
+          circle((x + diag, y + half), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-1")
+          circle((x + diag, y - half), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-2")
+          circle((x, y - s), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-3")
+          circle((x - diag, y - half), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-4")
+          circle((x - diag, y + half), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-5")
         }
       } else {
         line(
@@ -158,12 +158,12 @@
           name: name + "-face-" + str(q) + "-" + str(r),
         )
         if show-qubits {
-          circle((x + s, y), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x + half, y + diag), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x - half, y + diag), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x - s, y), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x - half, y - diag), radius: qubit-r, fill: qubit-color, stroke: none)
-          circle((x + half, y - diag), radius: qubit-r, fill: qubit-color, stroke: none)
+          circle((x + s, y), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-0")
+          circle((x + half, y + diag), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-1")
+          circle((x - half, y + diag), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-2")
+          circle((x - s, y), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-3")
+          circle((x - half, y - diag), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-4")
+          circle((x + half, y - diag), radius: qubit-r, fill: qubit-color, stroke: none, name: name + "-qubit-" + str(q) + "-" + str(r) + "-5")
         }
       }
       if show-stabilizers {
@@ -489,6 +489,108 @@
   } else {
     assert(false, message: "color-code-2d: unsupported tiling \"" + tiling + "\".")
   }
+}
+
+#let color-code-2d(
+  loc,
+  tiling: "6.6.6",
+  shape: "rect",
+  size: none,
+  hex-orientation: "flat",
+  scale: 1,
+  color1: yellow,
+  color2: aqua,
+  color3: olive,
+  name: "color-code",
+  stroke: black,
+  show-stabilizers: false,
+  stabilizer-offset: 0.35,
+  show-qubits: false,
+  qubit-radius: 0.12,
+  qubit-color: black,
+) = {
+  let params = (
+    loc: loc,
+    tiling: tiling,
+    shape: shape,
+    size: size,
+    hex-orientation: hex-orientation,
+    scale: scale,
+    color1: color1,
+    color2: color2,
+    color3: color3,
+    name: name,
+    stroke: stroke,
+    show-stabilizers: show-stabilizers,
+    stabilizer-offset: stabilizer-offset,
+    show-qubits: show-qubits,
+    qubit-radius: qubit-radius,
+    qubit-color: qubit-color,
+  )
+
+  let format-id = (id) => {
+    if type(id) == array and id.len() == 2 {
+      str(id.at(0)) + "-" + str(id.at(1))
+    } else {
+      str(id)
+    }
+  }
+
+  let face-anchor = (id) => name + "-face-" + format-id(id)
+  let qubit-anchor = (id) => name + "-qubit-" + format-id(id)
+
+  let draw-background = () => {
+    color-code-2d-render(
+      loc,
+      tiling: tiling,
+      shape: shape,
+      size: size,
+      hex-orientation: hex-orientation,
+      scale: scale,
+      color1: color1,
+      color2: color2,
+      color3: color3,
+      name: name,
+      stroke: stroke,
+      show-stabilizers: show-stabilizers,
+      stabilizer-offset: stabilizer-offset,
+      show-qubits: show-qubits,
+      qubit-radius: qubit-radius,
+      qubit-color: qubit-color,
+    )
+  }
+
+  let highlight-face = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
+    import draw: circle
+    circle((face-anchor)(id), radius: if radius == none { scale * 0.42 } else { radius }, fill: fill, stroke: stroke)
+  }
+
+  let highlight-qubit = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
+    import draw: circle
+    circle((qubit-anchor)(id), radius: if radius == none { scale * 0.2 } else { radius }, fill: fill, stroke: stroke)
+  }
+
+  (
+    tiling: tiling,
+    shape: shape,
+    params: params,
+    faces: if tiling == "6.6.6" and shape == "rect" and size.rows != none and size.cols != none {
+      (shape: "rect", rows: size.rows, cols: size.cols)
+    } else {
+      ()
+    },
+    qubits: (),
+    boundaries: (),
+    basis: (
+      hex-orientation: hex-orientation,
+      scale: scale,
+    ),
+    face-anchor: face-anchor,
+    qubit-anchor: qubit-anchor,
+    draw-background: draw-background,
+    highlight-face: highlight-face,
+    highlight-qubit: highlight-qubit,
+  )
 }
 
 #let stabilizer-label(loc, size:1, color1:yellow, color2:aqua) = {
