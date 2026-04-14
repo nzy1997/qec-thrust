@@ -906,10 +906,28 @@
     }
   }
 
-  let face-name = (id) => name + "-face-" + format-id(id)
-  let qubit-name = (id) => name + "-qubit-" + format-id(id)
-  let face-anchor-name = (id) => name + "-face-anchor-" + format-id(id)
-  let qubit-anchor-name = (id) => name + "-qubit-anchor-" + format-id(id)
+  let normalize-face-id = (id) => {
+    let id-text = format-id(id)
+    if canonical != none and not id-text.starts-with("f-") {
+      "f-" + id-text
+    } else {
+      id-text
+    }
+  }
+
+  let normalize-qubit-id = (id) => {
+    let id-text = format-id(id)
+    if canonical != none and not id-text.starts-with("q-") {
+      "q-" + id-text
+    } else {
+      id-text
+    }
+  }
+
+  let face-name = (id) => name + "-face-" + normalize-face-id(id)
+  let qubit-name = (id) => name + "-qubit-" + normalize-qubit-id(id)
+  let face-anchor-name = (id) => name + "-face-anchor-" + normalize-face-id(id)
+  let qubit-anchor-name = (id) => name + "-qubit-anchor-" + normalize-qubit-id(id)
   let face-anchor = (id) => (name: (face-anchor-name)(id), anchor: "center")
   let qubit-anchor = (id) => (name: (qubit-anchor-name)(id), anchor: "center")
 
@@ -924,7 +942,7 @@
   }
 
   let resolve-face = (id) => {
-    let target-id = format-id(id)
+    let target-id = normalize-face-id(id)
     let found = none
     for face in faces {
       if found == none and face.id == target-id {
@@ -935,7 +953,7 @@
   }
 
   let resolve-qubit = (id) => {
-    let target-id = format-id(id)
+    let target-id = normalize-qubit-id(id)
     let found = none
     for qubit in qubits {
       if found == none and qubit.id == target-id {
@@ -989,7 +1007,7 @@
     import draw: line, circle
     if tiling == "6.6.6" {
       let face = (resolve-face)(id)
-      assert(face != none, message: "Unknown face id \"" + format-id(id) + "\".")
+      assert(face != none, message: "Unknown face id \"" + normalize-face-id(id) + "\".")
       line(..face.vertices, close: true, fill: fill, stroke: stroke)
       if radius != none {
         circle(face.center, radius: radius, fill: none, stroke: stroke)
@@ -1003,7 +1021,7 @@
     import draw: circle
     if tiling == "6.6.6" {
       let qubit = (resolve-qubit)(id)
-      assert(qubit != none, message: "Unknown qubit id \"" + format-id(id) + "\".")
+      assert(qubit != none, message: "Unknown qubit id \"" + normalize-qubit-id(id) + "\".")
       circle(qubit.pos, radius: if radius == none { scale * 0.2 } else { radius }, fill: fill, stroke: stroke)
     } else {
       circle((qubit-anchor)(id), radius: if radius == none { scale * 0.2 } else { radius }, fill: fill, stroke: stroke)
