@@ -1097,6 +1097,10 @@
   }
 
   let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
+  let has-diagonal-basis = grid-cols >= 3 and grid-rows >= 2
+  let basis-origin = if has-diagonal-basis { map-point((step, 0)) } else { map-point((0, 0)) }
+  let basis-x-point = if has-diagonal-basis { map-point((2 * step, step)) } else { map-point((step, 0)) }
+  let basis-y-point = if has-diagonal-basis { map-point((0, step)) } else { map-point((0, step)) }
   (
     faces: faces,
     qubits: qubits,
@@ -1104,9 +1108,17 @@
       qubits: boundary-qubits,
     ),
     basis: (
-      origin: (x0, y0),
-      x: (step * inv-sqrt2, step * inv-sqrt2),
-      y: (-step * inv-sqrt2, step * inv-sqrt2),
+      origin: basis-origin,
+      // Basis vectors are defined by the same map-point transform used by
+      // canonical face/qubit geometry, so callers can place overlays consistently.
+      x: (
+        basis-x-point.at(0) - basis-origin.at(0),
+        basis-x-point.at(1) - basis-origin.at(1),
+      ),
+      y: (
+        basis-y-point.at(0) - basis-origin.at(0),
+        basis-y-point.at(1) - basis-origin.at(1),
+      ),
       scale: scale,
       reading: "45deg",
       "center-step": step,
