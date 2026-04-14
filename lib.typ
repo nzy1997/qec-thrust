@@ -1097,10 +1097,9 @@
   }
 
   let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
-  let has-diagonal-basis = grid-cols >= 3 and grid-rows >= 2
-  let basis-origin = if has-diagonal-basis { map-point((step, 0)) } else { map-point((0, 0)) }
-  let basis-x-point = if has-diagonal-basis { map-point((2 * step, step)) } else { map-point((step, 0)) }
-  let basis-y-point = if has-diagonal-basis { map-point((0, step)) } else { map-point((0, step)) }
+  let basis-origin = map-point((0, 0))
+  let basis-x-point = map-point((step, 0))
+  let basis-y-point = map-point((0, step))
   (
     faces: faces,
     qubits: qubits,
