@@ -529,15 +529,17 @@
   )
 
   let format-id = (id) => {
-    if type(id) == array and id.len() == 2 {
-      str(id.at(0)) + "-" + str(id.at(1))
+    if type(id) == array and id.len() > 0 {
+      str(id.at(0)) + id.slice(1).fold("", (acc, part) => acc + "-" + str(part))
     } else {
       str(id)
     }
   }
 
-  let face-anchor = (id) => name + "-face-" + format-id(id)
-  let qubit-anchor = (id) => name + "-qubit-" + format-id(id)
+  let face-name = (id) => name + "-face-" + format-id(id)
+  let qubit-name = (id) => name + "-qubit-" + format-id(id)
+  let face-anchor = (id) => (name: (face-name)(id), anchor: "centroid")
+  let qubit-anchor = (id) => (name: (qubit-name)(id), anchor: "center")
 
   let draw-background = () => {
     color-code-2d-render(
@@ -570,12 +572,15 @@
     circle((qubit-anchor)(id), radius: if radius == none { scale * 0.2 } else { radius }, fill: fill, stroke: stroke)
   }
 
+  let size-rows = if type(size) == dictionary { size.at("rows", default: none) } else { none }
+  let size-cols = if type(size) == dictionary { size.at("cols", default: none) } else { none }
+
   (
     tiling: tiling,
     shape: shape,
     params: params,
-    faces: if tiling == "6.6.6" and shape == "rect" and size.rows != none and size.cols != none {
-      (shape: "rect", rows: size.rows, cols: size.cols)
+    faces: if tiling == "6.6.6" and shape == "rect" and size-rows != none and size-cols != none {
+      (shape: "rect", rows: size-rows, cols: size-cols)
     } else {
       ()
     },

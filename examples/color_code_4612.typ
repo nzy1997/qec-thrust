@@ -2,8 +2,7 @@
 #set page(width: auto, height: auto, margin: 5pt)
 
 #canvas({
-  import draw: *
-  color-code-2d(
+  let code = color-code-2d(
     (0, 0),
     tiling: "4.6.12",
     shape: "rect",
@@ -15,4 +14,5 @@
     show-qubits: true,
     qubit-radius: 0.2,
   )
+  (code.draw-background)()
 })
