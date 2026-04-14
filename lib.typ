@@ -939,6 +939,181 @@
   )
 }
 
+#let color-code-488-canonical(
+  loc,
+  shape: "rect",
+  size: none,
+  scale: 1,
+) = {
+  assert(shape == "rect", message: "tiling \"4.8.8\" currently supports only shape \"rect\".")
+  assert(type(size) == dictionary and size.rows != none and size.cols != none, message: "shape \"rect\" requires size: (rows: ..., cols: ...).")
+
+  let x0 = loc.at(0)
+  let y0 = loc.at(1)
+  let s = scale
+  let half = s / 2
+  let inv-sqrt2 = 1 / calc.sqrt(2)
+  let apothem = s * (0.5 + inv-sqrt2)
+  let step = apothem + half
+  let grid-rows = size.rows * 2 - 1
+  let grid-cols = size.cols * 2 - 1
+
+  // Keep the octagons flat-top while tilting the reading frame into a 45-degree view.
+  let map-point = (pt) => (
+    x0 + pt.at(0) + pt.at(1) * inv-sqrt2,
+    y0 + pt.at(1) * inv-sqrt2,
+  )
+
+  let oct-local-offsets = (
+    (-half, apothem),
+    (half, apothem),
+    (apothem, half),
+    (apothem, -half),
+    (half, -apothem),
+    (-half, -apothem),
+    (-apothem, -half),
+    (-apothem, half),
+  )
+  let diamond-local-offsets = (
+    (-half, half),
+    (half, half),
+    (half, -half),
+    (-half, -half),
+  )
+
+  let oct-key-offsets = (
+    (-1, 3),
+    (1, 3),
+    (3, 1),
+    (3, -1),
+    (1, -3),
+    (-1, -3),
+    (-3, -1),
+    (-3, 1),
+  )
+  let diamond-key-offsets = (
+    (-1, 1),
+    (1, 1),
+    (1, -1),
+    (-1, -1),
+  )
+
+  let append-unique = (items, value) => if value in items { items } else { items + (value,) }
+  let add-int = (a, b) => (a.at(0) + b.at(0), a.at(1) + b.at(1))
+
+  let qubit-by-key = (:)
+  let qubit-by-id = (:)
+  let qubit-order = ()
+  let faces = ()
+
+  for r in range(grid-rows) {
+    for q in range(grid-cols) {
+      let is-oct = calc.rem(q + r, 2) == 0
+      let center-local = (q * step, r * step)
+      let center = map-point(center-local)
+      let face-id = "f-" + str(q) + "-" + str(r)
+      let key-origin = (4 * q, 4 * r)
+      let local-offsets = if is-oct { oct-local-offsets } else { diamond-local-offsets }
+      let key-offsets = if is-oct { oct-key-offsets } else { diamond-key-offsets }
+
+      let face-qubits = ()
+      let face-verts = ()
+      for i in range(local-offsets.len()) {
+        let rel = local-offsets.at(i)
+        let local-pos = (center-local.at(0) + rel.at(0), center-local.at(1) + rel.at(1))
+        let world-pos = map-point(local-pos)
+        let key-vec = add-int(key-origin, key-offsets.at(i))
+        let vertex-key = str(key-vec.at(0)) + "-" + str(key-vec.at(1))
+
+        let qid = if vertex-key in qubit-by-key {
+          qubit-by-key.at(vertex-key)
+        } else {
+          let new-id = "q-" + vertex-key
+          qubit-by-key.insert(vertex-key, new-id)
+          qubit-order.push(new-id)
+          qubit-by-id.insert(new-id, (
+            id: new-id,
+            pos: world-pos,
+            "incident-faces": (),
+            "boundary-tags": (),
+            meta: (vertex-key: vertex-key),
+          ))
+          new-id
+        }
+
+        let current = qubit-by-id.at(qid)
+        let incidents = append-unique(current.at("incident-faces"), face-id)
+        qubit-by-id.insert(qid, (
+          id: current.id,
+          pos: current.pos,
+          "incident-faces": incidents,
+          "boundary-tags": current.at("boundary-tags"),
+          meta: current.meta,
+        ))
+        face-qubits = append-unique(face-qubits, qid)
+        face-verts += (qubit-by-id.at(qid).pos,)
+      }
+
+      let color-tag = if is-oct {
+        if calc.rem(q, 2) == 0 { "c0" } else { "c1" }
+      } else {
+        "c2"
+      }
+      faces.push((
+        id: face-id,
+        kind: if is-oct { "oct" } else { "diamond" },
+        color: color-tag,
+        center: center,
+        vertices: face-verts,
+        qubits: face-qubits,
+        meta: (
+          grid: (q: q, r: r),
+          parity: calc.rem(q + r, 2),
+          shape: "rect",
+          tiling: "4.8.8",
+        ),
+      ))
+    }
+  }
+
+  let boundary-qubits = ()
+  for qid in qubit-order {
+    let qubit = qubit-by-id.at(qid)
+    let degree = qubit.at("incident-faces").len()
+    let tags = if degree < 3 { ("boundary",) } else { () }
+    if tags.len() > 0 {
+      boundary-qubits = append-unique(boundary-qubits, qid)
+    }
+    qubit-by-id.insert(qid, (
+      id: qubit.id,
+      pos: qubit.pos,
+      "incident-faces": qubit.at("incident-faces"),
+      "boundary-tags": tags,
+      meta: (
+        vertex-key: qubit.meta.vertex-key,
+        degree: degree,
+      ),
+    ))
+  }
+
+  let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
+  (
+    faces: faces,
+    qubits: qubits,
+    boundaries: (
+      qubits: boundary-qubits,
+    ),
+    basis: (
+      origin: (x0, y0),
+      x: (step * inv-sqrt2, step * inv-sqrt2),
+      y: (-step * inv-sqrt2, step * inv-sqrt2),
+      scale: scale,
+      reading: "45deg",
+      "center-step": step,
+    ),
+  )
+}
+
 #let color-code-2d(
   loc,
   tiling: "6.6.6",
@@ -982,6 +1157,13 @@
       shape: shape,
       size: size,
       hex-orientation: hex-orientation,
+      scale: scale,
+    )
+  } else if tiling == "4.8.8" {
+    color-code-488-canonical(
+      loc,
+      shape: shape,
+      size: size,
       scale: scale,
     )
   } else {
@@ -1067,7 +1249,7 @@
 
   let draw-background = () => {
     import draw: line, content, circle
-    if tiling == "6.6.6" {
+    if canonical != none {
       let qubit-r = qubit-radius * scale
       for face in faces {
         line(..face.vertices, close: true, fill: pick-face-color(face), stroke: stroke, name: (face-name)(face.id))
@@ -1107,7 +1289,7 @@
 
   let highlight-face = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
     import draw: line, circle
-    if tiling == "6.6.6" {
+    if canonical != none {
       let face = (resolve-face)(id)
       assert(face != none, message: "Unknown face id \"" + normalize-face-id(id) + "\".")
       line(..face.vertices, close: true, fill: fill, stroke: stroke)
@@ -1121,7 +1303,7 @@
 
   let highlight-qubit = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
     import draw: circle
-    if tiling == "6.6.6" {
+    if canonical != none {
       let qubit = (resolve-qubit)(id)
       assert(qubit != none, message: "Unknown qubit id \"" + normalize-qubit-id(id) + "\".")
       circle(qubit.pos, radius: if radius == none { scale * 0.2 } else { radius }, fill: fill, stroke: stroke)
