@@ -939,6 +939,204 @@
   )
 }
 
+#let color-code-4612-canonical(
+  loc,
+  shape: "rect",
+  size: none,
+  scale: 1,
+) = {
+  assert(shape == "rect", message: "tiling \"4.6.12\" currently supports only shape \"rect\".")
+  assert(type(size) == dictionary and size.rows != none and size.cols != none, message: "shape \"rect\" requires size: (rows: ..., cols: ...).")
+
+  let x0 = loc.at(0)
+  let y0 = loc.at(1)
+  let sqrt3 = calc.sqrt(3)
+  let a4 = 0.5
+  let a12 = 1 + sqrt3 / 2
+  let L = 2 * (a12 + a4)
+  let square-angle-v1 = 180deg
+  let square-angle-v2 = 240deg
+  let square-angle-v3 = 300deg
+  let hex-angle = 30deg
+
+  let vx = (p) => p.at(0)
+  let vy = (p) => p.at(1)
+  let add = (a, b) => (vx(a) + vx(b), vy(a) + vy(b))
+  let mul = (a, k) => (vx(a) * k, vy(a) * k)
+  let mid = (a, b) => mul(add(a, b), 0.5)
+  let append-unique = (items, value) => if value in items { items } else { items + (value,) }
+  let map-point = (pt) => (
+    x0 + vx(pt) * scale,
+    y0 + vy(pt) * scale,
+  )
+  let quantize = (value) => calc.round(value * 1000000)
+  let vertex-key = (pt) => str(quantize(vx(pt))) + "-" + str(quantize(vy(pt)))
+
+  let poly-verts-local = (center, sides, normal-angle) => {
+    let radius = 1 / (2 * calc.sin(180deg / sides))
+    let start = normal-angle - 180deg / sides
+    let verts = ()
+    for k in range(sides) {
+      let ang = start + 360deg * k / sides
+      verts += ((vx(center) + radius * calc.cos(ang), vy(center) + radius * calc.sin(ang)),)
+    }
+    verts
+  }
+
+  let v1 = (L, 0)
+  let v2 = (L / 2, L * sqrt3 / 2)
+  let center = (i, j) => (
+    i * vx(v1) + j * vx(v2),
+    i * vy(v1) + j * vy(v2),
+  )
+
+  let qubit-by-key = (:)
+  let qubit-by-id = (:)
+  let qubit-order = ()
+  let faces = ()
+  let face-seeds = ()
+
+  for j in range(size.rows) {
+    for i in range(size.cols) {
+      let c = center(i, j)
+      let id = "f-dod-" + str(i) + "-" + str(j)
+      let verts = poly-verts-local(c, 12, 0deg)
+      face-seeds += ((id: id, kind: "dodec", color: "c1", center: c, vertices: verts, meta: (i: i, j: j, role: "dodec")),)
+    }
+  }
+
+  for j in range(size.rows) {
+    for i in range(size.cols - 1) {
+      let c = mid(center(i, j), center(i + 1, j))
+      let id = "f-sq-" + str(i) + "-" + str(j) + "-v1"
+      let verts = poly-verts-local(c, 4, square-angle-v1)
+      face-seeds += ((id: id, kind: "square", color: "c2", center: c, vertices: verts, meta: (i: i, j: j, role: "sq", edge: "v1")),)
+    }
+  }
+  for j in range(size.rows - 1) {
+    for i in range(size.cols) {
+      let c = mid(center(i, j), center(i, j + 1))
+      let id = "f-sq-" + str(i) + "-" + str(j) + "-v2"
+      let verts = poly-verts-local(c, 4, square-angle-v2)
+      face-seeds += ((id: id, kind: "square", color: "c2", center: c, vertices: verts, meta: (i: i, j: j, role: "sq", edge: "v2")),)
+    }
+  }
+  for j in range(size.rows - 1) {
+    for i in range(size.cols - 1) {
+      let c = mid(center(i + 1, j), center(i, j + 1))
+      let id = "f-sq-" + str(i) + "-" + str(j) + "-v3"
+      let verts = poly-verts-local(c, 4, square-angle-v3)
+      face-seeds += ((id: id, kind: "square", color: "c2", center: c, vertices: verts, meta: (i: i, j: j, role: "sq", edge: "v3")),)
+    }
+  }
+
+  for j in range(size.rows - 1) {
+    for i in range(size.cols - 1) {
+      let a = center(i, j)
+      let b = center(i + 1, j)
+      let c = center(i, j + 1)
+      let up-center = mul(add(add(a, b), c), 1 / 3)
+      let up-id = "f-hex-" + str(i) + "-" + str(j) + "-up"
+      let up-verts = poly-verts-local(up-center, 6, hex-angle)
+      face-seeds += ((id: up-id, kind: "hex", color: "c0", center: up-center, vertices: up-verts, meta: (i: i, j: j, role: "hex", orient: "up")),)
+
+      let a2 = center(i + 1, j + 1)
+      let down-center = mul(add(add(b, c), a2), 1 / 3)
+      let down-id = "f-hex-" + str(i) + "-" + str(j) + "-down"
+      let down-verts = poly-verts-local(down-center, 6, hex-angle)
+      face-seeds += ((id: down-id, kind: "hex", color: "c0", center: down-center, vertices: down-verts, meta: (i: i, j: j, role: "hex", orient: "down")),)
+    }
+  }
+
+  for seed in face-seeds {
+    let face-qubits = ()
+    let verts-world = ()
+    for local in seed.vertices {
+      let key = vertex-key(local)
+      let qid = if key in qubit-by-key {
+        qubit-by-key.at(key)
+      } else {
+        let new-id = "q-" + key
+        qubit-by-key.insert(key, new-id)
+        qubit-order.push(new-id)
+        qubit-by-id.insert(new-id, (
+          id: new-id,
+          pos: map-point(local),
+          "incident-faces": (),
+          "boundary-tags": (),
+          meta: (vertex-key: key),
+        ))
+        new-id
+      }
+      let current = qubit-by-id.at(qid)
+      let incidents = append-unique(current.at("incident-faces"), seed.id)
+      qubit-by-id.insert(qid, (
+        id: current.id,
+        pos: current.pos,
+        "incident-faces": incidents,
+        "boundary-tags": current.at("boundary-tags"),
+        meta: current.meta,
+      ))
+      face-qubits = append-unique(face-qubits, qid)
+      verts-world += (map-point(local),)
+    }
+    faces.push((
+      id: seed.id,
+      kind: seed.kind,
+      color: seed.color,
+      center: map-point(seed.center),
+      vertices: verts-world,
+      qubits: face-qubits,
+      meta: (
+        tiling: "4.6.12",
+        shape: "rect",
+        source: seed.meta,
+      ),
+    ))
+  }
+
+  let boundary-qubits = ()
+  for qid in qubit-order {
+    let qubit = qubit-by-id.at(qid)
+    let degree = qubit.at("incident-faces").len()
+    let tags = if degree < 3 { ("boundary",) } else { () }
+    if tags.len() > 0 {
+      boundary-qubits = append-unique(boundary-qubits, qid)
+    }
+    qubit-by-id.insert(qid, (
+      id: qubit.id,
+      pos: qubit.pos,
+      "incident-faces": qubit.at("incident-faces"),
+      "boundary-tags": tags,
+      meta: (
+        vertex-key: qubit.meta.vertex-key,
+        degree: degree,
+      ),
+    ))
+  }
+
+  (
+    faces: faces,
+    qubits: qubit-order.map((qid) => qubit-by-id.at(qid)),
+    boundaries: (
+      qubits: boundary-qubits,
+    ),
+    basis: (
+      origin: map-point((0, 0)),
+      x: (
+        map-point(v1).at(0) - map-point((0, 0)).at(0),
+        map-point(v1).at(1) - map-point((0, 0)).at(1),
+      ),
+      y: (
+        map-point(v2).at(0) - map-point((0, 0)).at(0),
+        map-point(v2).at(1) - map-point((0, 0)).at(1),
+      ),
+      scale: scale,
+      lattice: "4.6.12",
+    ),
+  )
+}
+
 #let color-code-488-canonical(
   loc,
   shape: "rect",
@@ -1173,6 +1371,13 @@
     )
   } else if tiling == "4.8.8" {
     color-code-488-canonical(
+      loc,
+      shape: shape,
+      size: size,
+      scale: scale,
+    )
+  } else if tiling == "4.6.12" {
+    color-code-4612-canonical(
       loc,
       shape: shape,
       size: size,
