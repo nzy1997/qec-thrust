@@ -2,6 +2,7 @@
 #set page(width: auto, height: auto, margin: 5pt)
 
 #canvas({
+  import draw: content
   let qubit-radius = 0.1
   let code = color-code-2d(
     (0, 0),
@@ -18,4 +19,6 @@
     qubit-radius: qubit-radius,
   )
   (code.draw-background)()
+  content((code.face-anchor)("f-0-0"), [F00])
+  content((code.qubit-anchor)("q-2-0"), [q20])
 })
