@@ -7,7 +7,7 @@ This is a Typst package for visualizing quantum error correction codes.
 ## Steane code
 You can draw a Steane code by calling the `steane-code` function. The name of the qubits are automatically generated as `steane-1`, `steane-2`, etc.
 ```typ
-#import "@preview/qec-thrust:0.1.2": *
+#import "@preview/qec-thrust:0.2.0": *
 
 #canvas({
   import draw: *
@@ -73,76 +73,83 @@ You can draw a toric code with different size and color by `toric-code` function
 ![BB code](examples/toric2.png)
 
 ## 2D color code
-Use `color-code-2d` to draw 2D color code patches. Control the tiling with `tiling`, the shape with `shape` (`rect`, `tri`, `tri-cut`, or `para`), and the size with a `size` dictionary. For `tiling: "6.6.6"`, set `hex-orientation` to `"flat"` or `"pointy"` (`tri-cut` requires `"flat"`). Set `show-stabilizers: true` to overlay X/Z markers. (Currently `tiling: "6.6.6"`, `tiling: "4.6.12"`, and `tiling: "4.8.8"` are implemented; `4.6.12` and `4.8.8` support `shape: "rect"` only.)
+`color-code-2d` now returns a geometry object instead of drawing directly. This is a breaking change in `0.2.x`: construct the patch first, then draw and annotate it explicitly inside `canvas`.
+
 ```typ
 #canvas({
   import draw: *
-  let qubit-radius = 0.1
-  color-code-2d(
+
+  let code = color-code-2d(
     (0, 0),
     tiling: "6.6.6",
     shape: "rect",
     size: (rows: 4, cols: 4),
     hex-orientation: "flat",
-    scale: 1.2,
+    scale: 1.0,
     color1: yellow,
     color2: aqua,
     color3: olive,
     name: "color-rect",
     show-qubits: true,
-    qubit-radius: qubit-radius,
+    qubit-radius: 0.08,
   )
-  color-code-2d(
-    (0, -9),
-    tiling: "6.6.6",
-    shape: "tri",
-    size: (n: 4),
-    hex-orientation: "pointy",
-    scale: 1.2,
-    color1: yellow,
-    color2: aqua,
-    color3: olive,
-    name: "color-tri",
-    show-qubits: true,
-    qubit-radius: qubit-radius,
-  )
-  color-code-2d(
-    (9, 0),
-    tiling: "6.6.6",
-    shape: "para",
-    size: (rows: 4, cols: 4),
-    hex-orientation: "pointy",
-    scale: 1.2,
-    color1: yellow,
-    color2: aqua,
-    color3: olive,
-    name: "color-para",
-    show-qubits: true,
-    qubit-radius: qubit-radius,
-  )
-  color-code-2d(
-    (9, -10),
-    tiling: "6.6.6",
-    shape: "tri-cut",
-    size: (n: 3),
-    hex-orientation: "flat",
-    scale: 1.0,
-    color1: yellow,
-    color2: aqua,
-    color3: olive,
-    name: "color-tri-cut",
-    show-qubits: true,
-    qubit-radius: qubit-radius,
-  )
+
+  (code.draw-background)()
+  (code.highlight-face)((0, 0), stroke: (paint: red, thickness: 1pt))
+  (code.highlight-qubit)((2, 0), stroke: (paint: blue, thickness: 1pt))
+  content((code.face-anchor)((0, 0)), [f])
+  content((code.qubit-anchor)((2, 0)), [q])
 })
 ```
+
+The returned object exposes:
+
+- `code.faces`: canonical face records with `id`, `kind`, `color`, `center`, `vertices`, `qubits`, and `meta`.
+- `code.qubits`: canonical qubit records with `id`, `pos`, `incident-faces`, `boundary-tags`, and `meta`.
+- `code.boundaries`: boundary-indexed qubit ids. For `6.6.6` hex patches this includes `x+`, `y+`, `z+`, `x-`, `y-`, and `z-`.
+- `code.basis`: lattice basis information. `4.8.8` and `4.6.12` expose `origin`, `x`, and `y`; `6.6.6` exposes orientation metadata.
+- `code.face-anchor(id)` and `code.qubit-anchor(id)`: stable anchors for downstream figure composition.
+- `code.draw-background()`, `code.highlight-face(id, ..style)`, and `code.highlight-qubit(id, ..style)`: the small official drawing helper surface.
+
+For `tiling: "6.6.6"`, supported shapes are `rect`, `para`, `tri`, `tri-cut`, and `hex`. `hex-orientation` can be `"flat"` or `"pointy"` for the non-hex patches (`tri-cut` requires `"flat"`). Tuple shorthand such as `(0, 0)` for faces and `(2, 0)` for qubits is accepted for the simple `6.6.6` and `4.8.8` id schemes.
+
 ![2D color code](examples/color_code_666.png)
 
-## 2D color code (4.8.8)
+## 2D color code (6.6.6 hex patch)
+`shape: "hex"` builds a six-boundary patch with `size: (lx: ..., ly: ..., lz: ...)`.
+
 ```typ
 #canvas({
-  import draw: *
-  color-code-2d(
+  import draw: content
+
+  let code = color-code-2d(
+    (0, 0),
+    tiling: "6.6.6",
+    shape: "hex",
+    size: (lx: 3, ly: 4, lz: 2),
+    hex-orientation: "flat",
+    scale: 1.0,
+    name: "color-666-hex",
+    show-qubits: true,
+    qubit-radius: 0.08,
+  )
+
+  (code.draw-background)()
+  content((code.face-anchor)((0, 0)), [hex-f])
+  content((code.qubit-anchor)((2, 0)), [hex-q])
+})
+```
+
+The boundary qubits are available via `code.boundaries.qubits`, and the six colored sides are split into `code.boundaries.x+`, `y+`, `z+`, `x-`, `y-`, and `z-`.
+
+![2D color code 6.6.6 hex](examples/color_code_666_hex.png)
+
+## 2D color code (4.8.8)
+`tiling: "4.8.8"` now uses the same object API, keeps `size: (rows: ..., cols: ...)` as a rectangular patch boundary, and exposes a geometry-derived 45-degree reading frame through `code.basis.origin`, `code.basis.x`, and `code.basis.y`.
+
+```typ
+#canvas({
+  let code = color-code-2d(
     (0, 0),
     tiling: "4.8.8",
     shape: "rect",
@@ -155,15 +162,23 @@ Use `color-code-2d` to draw 2D color code patches. Control the tiling with `tili
     show-qubits: true,
     qubit-radius: 0.1,
   )
+  (code.draw-background)()
 })
 ```
+
+See `examples/color_code_488_reference.typ` for a reference-style figure that reads the basis vectors directly from the object and annotates one face and one qubit through anchors.
+
 ![2D color code 4.8.8](examples/color_code_488.png)
+![2D color code 4.8.8 reference](examples/color_code_488_reference.png)
 
 ## 2D color code (4.6.12)
+`tiling: "4.6.12"` also returns the shared object shape. Currently only `shape: "rect"` is implemented. Stable face ids use the canonical prefixes `f-dod-*`, `f-sq-*`, and `f-hex-*`.
+
 ```typ
 #canvas({
-  import draw: *
-  color-code-2d(
+  import draw: content
+
+  let code = color-code-2d(
     (0, 0),
     tiling: "4.6.12",
     shape: "rect",
@@ -172,15 +187,22 @@ Use `color-code-2d` to draw 2D color code patches. Control the tiling with `tili
     color1: yellow,
     color2: aqua,
     color3: olive,
+    name: "color-4612",
     show-qubits: true,
     qubit-radius: 0.2,
   )
+
+  (code.draw-background)()
+  (code.highlight-face)("dod-2-2", stroke: (paint: red, thickness: 1pt))
+  content((code.face-anchor)("dod-2-2"), [dod])
 })
 ```
+
 ![2D color code 4.6.12](examples/color_code_4612.png)
 
 ## Notes
 - If you draw multiple codes of the same type in one canvas, set a unique `name` prefix to avoid anchor collisions.
+- `show-qubits`, `qubit-radius`, `qubit-color`, `show-stabilizers`, and `stabilizer-offset` are constructor options that affect `code.draw-background()`.
 - `surface-code` uses +y upward, while `toric-code` uses -y downward (grid grows down).
 ## License
 

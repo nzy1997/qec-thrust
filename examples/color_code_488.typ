@@ -1,4 +1,5 @@
 #import "../lib.typ": *
+#import draw: content
 #set page(width: auto, height: auto, margin: 5pt)
 
 #canvas({
@@ -16,4 +17,6 @@
     qubit-radius: 0.1,
   )
   (code.draw-background)()
+  (code.highlight-face)((2, 2), stroke: (paint: red, thickness: 1pt))
+  content((code.face-anchor)((2, 2)), [f])
 })

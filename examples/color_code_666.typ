@@ -20,8 +20,10 @@
     qubit-radius: qubit-radius,
   )
   (rect.draw-background)()
-  content((rect.face-anchor)("f-0-0"), [rect-f])
-  content((rect.qubit-anchor)("q-2-0"), [rect-q])
+  (rect.highlight-face)((0, 0), stroke: (paint: red, thickness: 1pt))
+  (rect.highlight-qubit)((2, 0), stroke: (paint: blue, thickness: 1pt))
+  content((rect.face-anchor)((0, 0)), [rect-f])
+  content((rect.qubit-anchor)((2, 0)), [rect-q])
 
   let para = color-code-2d(
     (9.5, 0),
@@ -38,8 +40,8 @@
     qubit-radius: qubit-radius,
   )
   (para.draw-background)()
-  content((para.face-anchor)("f-0-0"), [para-f])
-  content((para.qubit-anchor)("q-2-0"), [para-q])
+  content((para.face-anchor)((0, 0)), [para-f])
+  content((para.qubit-anchor)((2, 0)), [para-q])
 
   let tri = color-code-2d(
     (0, 7.5),
@@ -56,8 +58,8 @@
     qubit-radius: qubit-radius,
   )
   (tri.draw-background)()
-  content((tri.face-anchor)("f-0-0"), [tri-f])
-  content((tri.qubit-anchor)("q-2-0"), [tri-q])
+  content((tri.face-anchor)((0, 0)), [tri-f])
+  content((tri.qubit-anchor)((2, 0)), [tri-q])
 
   let tri-cut = color-code-2d(
     (9.5, 7.5),
@@ -74,6 +76,6 @@
     qubit-radius: qubit-radius,
   )
   (tri-cut.draw-background)()
-  content((tri-cut.face-anchor)("f-0-0"), [tri-cut-f])
-  content((tri-cut.qubit-anchor)("q-2-0"), [tri-cut-q])
+  content((tri-cut.face-anchor)((0, 0)), [tri-cut-f])
+  content((tri-cut.qubit-anchor)((2, 0)), [tri-cut-q])
 })

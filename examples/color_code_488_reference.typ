@@ -19,6 +19,8 @@
   )
 
   (code.draw-background)()
+  (code.highlight-face)((2, 2), stroke: (paint: red, thickness: 1pt))
+  (code.highlight-qubit)((8, 10), stroke: (paint: blue, thickness: 1pt))
 
   let o = code.basis.origin
   let bx = code.basis.x
@@ -32,5 +34,5 @@
   content(px, [x])
   content(py, [y])
   content((code.face-anchor)((2, 2)), [f])
-  content((code.qubit-anchor)((7, 11)), [q])
+  content((code.qubit-anchor)((8, 10)), [q])
 })

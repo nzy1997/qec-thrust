@@ -18,6 +18,8 @@
     qubit-radius: 0.08,
   )
   (code.draw-background)()
-  content((code.face-anchor)("f-0-0"), [hex-f])
-  content((code.qubit-anchor)("q-2-0"), [hex-q])
+  (code.highlight-face)((0, 0), stroke: (paint: red, thickness: 1pt))
+  (code.highlight-qubit)((2, 0), stroke: (paint: blue, thickness: 1pt))
+  content((code.face-anchor)((0, 0)), [hex-f])
+  content((code.qubit-anchor)((2, 0)), [hex-q])
 })

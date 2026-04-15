@@ -1149,51 +1149,51 @@
   let x0 = loc.at(0)
   let y0 = loc.at(1)
   let s = scale
+  let sqrt2 = calc.sqrt(2)
+  let inv-sqrt2 = 1 / sqrt2
   let half = s / 2
-  let inv-sqrt2 = 1 / calc.sqrt(2)
   let apothem = s * (0.5 + inv-sqrt2)
-  let step = apothem + half
-  let grid-rows = size.rows * 2 - 1
-  let grid-cols = size.cols * 2 - 1
+  let pitch = s * (1 + sqrt2)
+  let basis-step = pitch / 2
+  let diamond-radius = s * inv-sqrt2
 
-  // Keep the octagons flat-top while tilting the reading frame into a 45-degree view.
   let map-point = (pt) => (
-    x0 + pt.at(0) + pt.at(1) * inv-sqrt2,
-    y0 + pt.at(1) * inv-sqrt2,
+    x0 + pt.at(0),
+    y0 + pt.at(1),
   )
 
   let oct-local-offsets = (
-    (-half, apothem),
-    (half, apothem),
-    (apothem, half),
-    (apothem, -half),
-    (half, -apothem),
     (-half, -apothem),
-    (-apothem, -half),
+    (half, -apothem),
+    (apothem, -half),
+    (apothem, half),
+    (half, apothem),
+    (-half, apothem),
     (-apothem, half),
+    (-apothem, -half),
   )
   let diamond-local-offsets = (
-    (-half, half),
-    (half, half),
-    (half, -half),
-    (-half, -half),
+    (0, -diamond-radius),
+    (diamond-radius, 0),
+    (0, diamond-radius),
+    (-diamond-radius, 0),
   )
 
   let oct-key-offsets = (
-    (-1, 3),
-    (1, 3),
-    (3, 1),
-    (3, -1),
-    (1, -3),
-    (-1, -3),
-    (-3, -1),
-    (-3, 1),
+    (-2, -4),
+    (2, -4),
+    (4, -2),
+    (4, 2),
+    (2, 4),
+    (-2, 4),
+    (-4, 2),
+    (-4, -2),
   )
   let diamond-key-offsets = (
-    (-1, 1),
-    (1, 1),
-    (1, -1),
-    (-1, -1),
+    (0, -2),
+    (2, 0),
+    (0, 2),
+    (-2, 0),
   )
 
   let append-unique = (items, value) => if value in items { items } else { items + (value,) }
@@ -1203,75 +1203,96 @@
   let qubit-by-id = (:)
   let qubit-order = ()
   let faces = ()
+  let face-seeds = ()
 
-  for r in range(grid-rows) {
-    for q in range(grid-cols) {
-      let is-oct = calc.rem(q + r, 2) == 0
-      let center-local = (q * step, r * step)
-      let center = map-point(center-local)
-      let face-id = "f-" + str(q) + "-" + str(r)
-      let key-origin = (4 * q, 4 * r)
-      let local-offsets = if is-oct { oct-local-offsets } else { diamond-local-offsets }
-      let key-offsets = if is-oct { oct-key-offsets } else { diamond-key-offsets }
-
-      let face-qubits = ()
-      let face-verts = ()
-      for i in range(local-offsets.len()) {
-        let rel = local-offsets.at(i)
-        let local-pos = (center-local.at(0) + rel.at(0), center-local.at(1) + rel.at(1))
-        let world-pos = map-point(local-pos)
-        let key-vec = add-int(key-origin, key-offsets.at(i))
-        let vertex-key = str(key-vec.at(0)) + "-" + str(key-vec.at(1))
-
-        let qid = if vertex-key in qubit-by-key {
-          qubit-by-key.at(vertex-key)
-        } else {
-          let new-id = "q-" + vertex-key
-          qubit-by-key.insert(vertex-key, new-id)
-          qubit-order.push(new-id)
-          qubit-by-id.insert(new-id, (
-            id: new-id,
-            pos: world-pos,
-            "incident-faces": (),
-            "boundary-tags": (),
-            meta: (vertex-key: vertex-key),
-          ))
-          new-id
-        }
-
-        let current = qubit-by-id.at(qid)
-        let incidents = append-unique(current.at("incident-faces"), face-id)
-        qubit-by-id.insert(qid, (
-          id: current.id,
-          pos: current.pos,
-          "incident-faces": incidents,
-          "boundary-tags": current.at("boundary-tags"),
-          meta: current.meta,
-        ))
-        face-qubits = append-unique(face-qubits, qid)
-        face-verts += (qubit-by-id.at(qid).pos,)
-      }
-
-      let color-tag = if is-oct {
-        if calc.rem(q, 2) == 0 { "c0" } else { "c1" }
-      } else {
-        "c2"
-      }
-      faces.push((
-        id: face-id,
-        kind: if is-oct { "oct" } else { "diamond" },
-        color: color-tag,
-        center: center,
-        vertices: face-verts,
-        qubits: face-qubits,
-        meta: (
-          grid: (q: q, r: r),
-          parity: calc.rem(q + r, 2),
-          shape: "rect",
-          tiling: "4.8.8",
-        ),
-      ))
+  for row in range(size.rows + 1) {
+    for col in range(size.cols + 1) {
+      let fq = 2 * col
+      let fr = 2 * row
+      let center-local = (col * pitch, row * pitch)
+      face-seeds += ((
+        fq: fq,
+        fr: fr,
+        center_local: center-local,
+        local_offsets: diamond-local-offsets,
+        key_offsets: diamond-key-offsets,
+        kind: "diamond",
+        color: "c2",
+      ),)
     }
+  }
+
+  for row in range(size.rows) {
+    for col in range(size.cols) {
+      let fq = 2 * col + 1
+      let fr = 2 * row + 1
+      let center-local = ((col + 0.5) * pitch, (row + 0.5) * pitch)
+      face-seeds += ((
+        fq: fq,
+        fr: fr,
+        center_local: center-local,
+        local_offsets: oct-local-offsets,
+        key_offsets: oct-key-offsets,
+        kind: "oct",
+        color: if calc.rem(col + row, 2) == 0 { "c0" } else { "c1" },
+      ),)
+    }
+  }
+
+  for seed in face-seeds {
+    let face-id = "f-" + str(seed.fq) + "-" + str(seed.fr)
+    let key-origin = (4 * seed.fq, 4 * seed.fr)
+    let face-qubits = ()
+    let face-verts = ()
+    for i in range(seed.local_offsets.len()) {
+      let rel = seed.local_offsets.at(i)
+      let local-pos = (seed.center_local.at(0) + rel.at(0), seed.center_local.at(1) + rel.at(1))
+      let world-pos = map-point(local-pos)
+      let key-vec = add-int(key-origin, seed.key_offsets.at(i))
+      let vertex-key = str(key-vec.at(0)) + "-" + str(key-vec.at(1))
+
+      let qid = if vertex-key in qubit-by-key {
+        qubit-by-key.at(vertex-key)
+      } else {
+        let new-id = "q-" + vertex-key
+        qubit-by-key.insert(vertex-key, new-id)
+        qubit-order.push(new-id)
+        qubit-by-id.insert(new-id, (
+          id: new-id,
+          pos: world-pos,
+          "incident-faces": (),
+          "boundary-tags": (),
+          meta: (vertex-key: vertex-key),
+        ))
+        new-id
+      }
+
+      let current = qubit-by-id.at(qid)
+      let incidents = append-unique(current.at("incident-faces"), face-id)
+      qubit-by-id.insert(qid, (
+        id: current.id,
+        pos: current.pos,
+        "incident-faces": incidents,
+        "boundary-tags": current.at("boundary-tags"),
+        meta: current.meta,
+      ))
+      face-qubits = append-unique(face-qubits, qid)
+      face-verts += (qubit-by-id.at(qid).pos,)
+    }
+
+    faces.push((
+      id: face-id,
+      kind: seed.kind,
+      color: seed.color,
+      center: map-point(seed.center_local),
+      vertices: face-verts,
+      qubits: face-qubits,
+      meta: (
+        grid: (q: seed.fq, r: seed.fr),
+        shape: "rect",
+        tiling: "4.8.8",
+      ),
+    ))
   }
 
   let boundary-qubits = ()
@@ -1295,10 +1316,23 @@
   }
 
   let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
-  let has-diagonal-basis = grid-cols >= 3 and grid-rows >= 2
-  let basis-origin = if has-diagonal-basis { map-point((step, 0)) } else { map-point((0, 0)) }
-  let basis-x-point = if has-diagonal-basis { map-point((2 * step, step)) } else { map-point((step, 0)) }
-  let basis-y-point = if has-diagonal-basis { map-point((0, step)) } else { map-point((0, step)) }
+  let has-diagonal-basis = size.cols >= 1 and size.rows >= 1
+  let basis_origin_local = if has-diagonal-basis {
+    ((size.cols - 1) * basis-step, 0)
+  } else {
+    (0, 0)
+  }
+  let basis-origin = map-point(basis_origin_local)
+  let basis-x-point = if has-diagonal-basis {
+    map-point((basis_origin_local.at(0) + basis-step, basis-step))
+  } else {
+    map-point((basis-step, basis-step))
+  }
+  let basis-y-point = if has-diagonal-basis {
+    map-point((basis_origin_local.at(0) - basis-step, basis-step))
+  } else {
+    map-point((-basis-step, basis-step))
+  }
   (
     faces: faces,
     qubits: qubits,
@@ -1307,8 +1341,7 @@
     ),
     basis: (
       origin: basis-origin,
-      // For sufficiently large patches, expose the diagonal reading frame used by
-      // the reference figures while still deriving the vectors from map-point.
+      // Expose the diagonal reading frame directly from the rotated geometry.
       x: (
         basis-x-point.at(0) - basis-origin.at(0),
         basis-x-point.at(1) - basis-origin.at(1),
@@ -1319,7 +1352,7 @@
       ),
       scale: scale,
       reading: "45deg",
-      "center-step": step,
+      "center-step": basis-step,
     ),
   )
 }
