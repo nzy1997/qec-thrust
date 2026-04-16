@@ -4,7 +4,6 @@
 #set page(width: auto, height: auto, margin: 5pt)
 
 #let patch-488(name, orientation: "flat") = canvas({
-  import draw: content
   let code = color-code-2d(
     (0, 0),
     tiling: "4.8.8",
@@ -19,7 +18,6 @@
     show-qubits: false,
   )
   (code.draw-background)()
-  content((0, -5.1), text(size: 9pt)[#code.basis.orientation])
 })
 
 #grid(

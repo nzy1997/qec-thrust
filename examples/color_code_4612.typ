@@ -1,5 +1,4 @@
 #import "../lib.typ": *
-#import draw: content
 #set page(width: auto, height: auto, margin: 5pt)
 
 #canvas({
@@ -18,5 +17,4 @@
   )
   (code.draw-background)()
   (code.highlight-face)("dod-2-2", stroke: (paint: red, thickness: 1pt))
-  content((code.face-anchor)("dod-2-2"), [dod])
 })

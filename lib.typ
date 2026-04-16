@@ -257,6 +257,36 @@
         }
         out
       }
+      let geom-eps = 1e-6
+      let close-pt = (a, b) => calc.abs(pt-x(a) - pt-x(b)) <= geom-eps and calc.abs(pt-y(a) - pt-y(b)) <= geom-eps
+      let cross = (a, b) => pt-x(a) * pt-y(b) - pt-y(a) * pt-x(b)
+      let clean-poly = (poly) => {
+        let dedup = ()
+        for pt in poly {
+          if dedup.len() == 0 or not close-pt(dedup.last(), pt) {
+            dedup += (pt,)
+          }
+        }
+        if dedup.len() > 1 and close-pt(dedup.at(0), dedup.last()) {
+          dedup = dedup.slice(0, dedup.len() - 1)
+        }
+        if dedup.len() <= 2 {
+          return dedup
+        }
+        let cleaned = ()
+        for i in range(dedup.len()) {
+          let prev = if i == 0 { dedup.last() } else { dedup.at(i - 1) }
+          let curr = dedup.at(i)
+          let next = if i + 1 == dedup.len() { dedup.at(0) } else { dedup.at(i + 1) }
+          let v1 = sub(curr, prev)
+          let v2 = sub(next, curr)
+          let collinear = calc.abs(cross(v1, v2)) <= geom-eps and dot(v1, v2) > 0
+          if not collinear {
+            cleaned += (curr,)
+          }
+        }
+        cleaned
+      }
 
       let n-base = line-normal(tri-a, tri-b)
       let n-right = line-normal(tri-b, tri-c)
@@ -283,6 +313,7 @@
           let clipped = clip-poly(poly, tri-a, n-base)
           let clipped = clip-poly(clipped, tri-b, n-right)
           let clipped = clip-poly(clipped, tri-c, n-left)
+          let clipped = clean-poly(clipped)
           if clipped.len() >= 3 {
             line(..clipped, close: true, fill: pick-color(mod3(q + 2 * r)), stroke: stroke, name: name + "-face-" + str(q) + "-" + str(r))
             if show-stabilizers {
@@ -738,6 +769,36 @@
       }
       out
     }
+    let geom-eps = 1e-6
+    let close-pt = (a, b) => calc.abs(pt-x(a) - pt-x(b)) <= geom-eps and calc.abs(pt-y(a) - pt-y(b)) <= geom-eps
+    let cross = (a, b) => pt-x(a) * pt-y(b) - pt-y(a) * pt-x(b)
+    let clean-poly = (poly) => {
+      let dedup = ()
+      for pt in poly {
+        if dedup.len() == 0 or not close-pt(dedup.last(), pt) {
+          dedup += (pt,)
+        }
+      }
+      if dedup.len() > 1 and close-pt(dedup.at(0), dedup.last()) {
+        dedup = dedup.slice(0, dedup.len() - 1)
+      }
+      if dedup.len() <= 2 {
+        return dedup
+      }
+      let cleaned = ()
+      for i in range(dedup.len()) {
+        let prev = if i == 0 { dedup.last() } else { dedup.at(i - 1) }
+        let curr = dedup.at(i)
+        let next = if i + 1 == dedup.len() { dedup.at(0) } else { dedup.at(i + 1) }
+        let v1 = sub(curr, prev)
+        let v2 = sub(next, curr)
+        let collinear = calc.abs(cross(v1, v2)) <= geom-eps and dot(v1, v2) > 0
+        if not collinear {
+          cleaned += (curr,)
+        }
+      }
+      cleaned
+    }
 
     let n-base = line-normal(tri-a, tri-b)
     let n-right = line-normal(tri-b, tri-c)
@@ -762,6 +823,7 @@
         let clipped = clip-poly(full-verts, tri-a, n-base)
         let clipped = clip-poly(clipped, tri-b, n-right)
         let clipped = clip-poly(clipped, tri-c, n-left)
+        let clipped = clean-poly(clipped)
         if clipped.len() >= 3 {
           let qubit-corners = ()
           for corner in all-corners {
