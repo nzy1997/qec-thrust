@@ -1792,22 +1792,95 @@
 }
 
 #let toric-code(loc, m, n, size:1,circle-radius:0.2,color1:white,color2:gray,line-thickness:1pt,name: "toric") = {
-  import draw: *
-    for i in range(m){
-    for j in range(n){
-            let x = loc.at(0) + i * size
-      let y = loc.at(1) - j * size
- rect((x, y), (x + size, y - size), fill: color1, stroke: black,name: name + "-square" + "-" + str(i) + "-" + str(j))
-    }}
-  for i in range(m){
-    for j in range(n){
-      let x = loc.at(0) + i * size
-      let y = loc.at(1) - j * size
+  let params = (
+    loc: loc,
+    m: m,
+    n: n,
+    size: size,
+    circle-radius: circle-radius,
+    color1: color1,
+    color2: color2,
+    line-thickness: line-thickness,
+    name: name,
+  )
 
-      circle((x + size/2, y), radius: circle-radius, fill: color1, stroke: (thickness: line-thickness),name: name + "-point-vertical-" + str(i) +"-" + str(j))
-      circle((x, y - size/2), radius: circle-radius, fill: color2, stroke: (thickness: line-thickness),name: name + "-point-horizontal-" + str(i) +"-" + str(j))
+  let normalize-qubit-id = (id) => {
+    if type(id) == array {
+      assert(id.len() == 3, message: "Toric qubit id must be (\"vertical\"|\"horizontal\", i, j).")
+      let family = str(id.at(0))
+      assert(family == "vertical" or family == "horizontal", message: "Unknown toric qubit family \"" + family + "\".")
+      family + "-" + str(id.at(1)) + "-" + str(id.at(2))
+    } else {
+      str(id)
     }
   }
+
+  let qubit-name = (id) => name + "-point-" + normalize-qubit-id(id)
+  let qubit-anchor = (id) => (name: (qubit-name)(id), anchor: "center")
+
+  let qubits = ()
+  for i in range(m) {
+    for j in range(n) {
+      let x = loc.at(0) + i * size
+      let y = loc.at(1) - j * size
+      qubits += (
+        (
+          id: ("vertical", i, j),
+          pos: (x + size / 2, y),
+          color: color1,
+          name: (qubit-name)(("vertical", i, j)),
+        ),
+      )
+      qubits += (
+        (
+          id: ("horizontal", i, j),
+          pos: (x, y - size / 2),
+          color: color2,
+          name: (qubit-name)(("horizontal", i, j)),
+        ),
+      )
+    }
+  }
+
+  let resolve-qubit = (id) => {
+    let target-id = normalize-qubit-id(id)
+    let found = none
+    for qubit in qubits {
+      if found == none and normalize-qubit-id(qubit.id) == target-id {
+        found = qubit
+      }
+    }
+    found
+  }
+
+  let draw-background = () => {
+    import draw: rect, circle
+    for i in range(m) {
+      for j in range(n) {
+        let x = loc.at(0) + i * size
+        let y = loc.at(1) - j * size
+        rect((x, y), (x + size, y - size), fill: color1, stroke: black, name: name + "-square" + "-" + str(i) + "-" + str(j))
+      }
+    }
+    for qubit in qubits {
+      circle(qubit.pos, radius: circle-radius, fill: qubit.color, stroke: (thickness: line-thickness), name: qubit.name)
+    }
+  }
+
+  let highlight-qubit = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
+    import draw: circle
+    let qubit = (resolve-qubit)(id)
+    assert(qubit != none, message: "Unknown toric qubit id \"" + normalize-qubit-id(id) + "\".")
+    circle(qubit.pos, radius: if radius == none { circle-radius } else { radius }, fill: fill, stroke: stroke)
+  }
+
+  (
+    params: params,
+    qubits: qubits,
+    draw-background: draw-background,
+    qubit-anchor: qubit-anchor,
+    highlight-qubit: highlight-qubit,
+  )
 }
 
 #let plaquette-code-label(loc, posx,posy, ver-vec:((-1,0),(-1,1)), hor-vec:((0,0),(-1,0)), size:1,circle-radius:0.2, color1:white, color2:gray, color3:yellow,line-thickness:1pt,name: "toric") = {
