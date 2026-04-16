@@ -90,6 +90,7 @@
   tiling: "4.8.8",
   shape: "rect",
   size: (rows: 3, cols: 3),
+  orientation: "pointy",
   scale: 1.0,
   color1: soft-red,
   color2: soft-green,

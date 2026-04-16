@@ -91,7 +91,7 @@
   tiling: "6.6.6",
   shape: "hex",
   size: (lx: 3, ly: 3, lz: 3),
-  hex-orientation: "flat",
+  orientation: "flat",
   scale: 1.0,
   color1: soft-red,
   color2: soft-green,

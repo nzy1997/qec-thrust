@@ -73,7 +73,7 @@
   tiling: "6.6.6",
   shape: "rect",
   size: none,
-  hex-orientation: "flat",
+  orientation: "flat",
   scale: 1,
   color1: yellow,
   color2: aqua,
@@ -104,10 +104,10 @@
     let half = s / 2
     let diag = sqrt3 / 2 * s
     let qubit-r = qubit-radius * s
-    assert(hex-orientation == "flat" or hex-orientation == "pointy", message: "hex-orientation must be \"flat\" or \"pointy\".")
+    assert(orientation == "flat" or orientation == "pointy", message: "orientation must be \"flat\" or \"pointy\".")
 
     let axial-to-center = (q, r) => {
-      if hex-orientation == "pointy" {
+      if orientation == "pointy" {
         (x0 + sqrt3 * s * (q + r / 2), y0 + 1.5 * s * r)
       } else {
         (x0 + 1.5 * s * q, y0 + sqrt3 * s * (r + q / 2))
@@ -115,7 +115,7 @@
     }
 
     let offset-to-axial = (col, row) => {
-      if hex-orientation == "pointy" {
+      if orientation == "pointy" {
         (col - (row - calc.rem(row, 2)) / 2, row)
       } else {
         (col, row - (col - calc.rem(col, 2)) / 2)
@@ -123,7 +123,7 @@
     }
 
     let draw-face = (x, y, q, r, color-index) => {
-      if hex-orientation == "pointy" {
+      if orientation == "pointy" {
         line(
           (x, y + s),
           (x + diag, y + half),
@@ -201,7 +201,7 @@
         }
       }
     } else if shape == "tri-cut" {
-      assert(hex-orientation == "flat", message: "shape \"tri-cut\" requires hex-orientation: \"flat\".")
+      assert(orientation == "flat", message: "shape \"tri-cut\" requires orientation: \"flat\".")
       assert(size.n != none, message: "shape \"tri-cut\" requires size: (n: ...).")
       let n = size.n
       let tri-a = (x0, y0)
@@ -495,11 +495,11 @@
   loc,
   shape: "rect",
   size: none,
-  hex-orientation: "flat",
+  orientation: "flat",
   scale: 1,
 ) = {
   assert(size != none, message: "color-code-2d requires size: (rows/cols or n).")
-  assert(hex-orientation == "flat" or hex-orientation == "pointy", message: "hex-orientation must be \"flat\" or \"pointy\".")
+  assert(orientation == "flat" or orientation == "pointy", message: "orientation must be \"flat\" or \"pointy\".")
   let x0 = loc.at(0)
   let y0 = loc.at(1)
   let s = scale
@@ -521,7 +521,7 @@
   let add-int = (a, b) => (a.at(0) + b.at(0), a.at(1) + b.at(1))
 
   let axial-to-center = (q, r) => {
-    if hex-orientation == "pointy" {
+    if orientation == "pointy" {
       (x0 + sqrt3 * s * (q + r / 2), y0 + 1.5 * s * r)
     } else {
       (x0 + 1.5 * s * q, y0 + sqrt3 * s * (r + q / 2))
@@ -529,14 +529,14 @@
   }
 
   let offset-to-axial = (col, row) => {
-    if hex-orientation == "pointy" {
+    if orientation == "pointy" {
       (col - (row - calc.rem(row, 2)) / 2, row)
     } else {
       (col, row - (col - calc.rem(col, 2)) / 2)
     }
   }
 
-  let vertex-offsets = if hex-orientation == "pointy" {
+  let vertex-offsets = if orientation == "pointy" {
     (
       (0, s),
       (diag, half),
@@ -556,7 +556,7 @@
     )
   }
 
-  let vertex-key-offsets = if hex-orientation == "pointy" {
+  let vertex-key-offsets = if orientation == "pointy" {
     (
       (0, 2),
       (1, 1),
@@ -577,7 +577,7 @@
   }
 
   let center-key = (q, r) => {
-    if hex-orientation == "pointy" {
+    if orientation == "pointy" {
       (2 * q + r, 3 * r)
     } else {
       (3 * q, 2 * r + q)
@@ -687,7 +687,7 @@
       }
     }
   } else if shape == "tri-cut" {
-    assert(hex-orientation == "flat", message: "shape \"tri-cut\" requires hex-orientation: \"flat\".")
+    assert(orientation == "flat", message: "shape \"tri-cut\" requires orientation: \"flat\".")
     assert(size.n != none, message: "shape \"tri-cut\" requires size: (n: ...).")
     let n = size.n
     let tri-a = (x0, y0)
@@ -929,10 +929,10 @@
     qubits: qubits,
     boundaries: boundaries,
     basis: (
-      hex-orientation: hex-orientation,
+      orientation: orientation,
       scale: scale,
       axial: (
-        center-key: if hex-orientation == "pointy" { "u=2q+r,v=3r" } else { "u=3q,v=2r+q" },
+        center-key: if orientation == "pointy" { "u=2q+r,v=3r" } else { "u=3q,v=2r+q" },
       ),
       vertex-key-offsets: vertex-key-offsets,
     ),
@@ -1141,10 +1141,12 @@
   loc,
   shape: "rect",
   size: none,
+  orientation: "flat",
   scale: 1,
 ) = {
   assert(shape == "rect", message: "tiling \"4.8.8\" currently supports only shape \"rect\".")
   assert(type(size) == dictionary and size.rows != none and size.cols != none, message: "shape \"rect\" requires size: (rows: ..., cols: ...).")
+  assert(orientation == "flat" or orientation == "pointy", message: "orientation must be \"flat\" or \"pointy\".")
 
   let x0 = loc.at(0)
   let y0 = loc.at(1)
@@ -1153,208 +1155,348 @@
   let inv-sqrt2 = 1 / sqrt2
   let half = s / 2
   let apothem = s * (0.5 + inv-sqrt2)
-  let pitch = s * (1 + sqrt2)
-  let basis-step = pitch / 2
-  let diamond-radius = s * inv-sqrt2
-
-  let map-point = (pt) => (
-    x0 + pt.at(0),
-    y0 + pt.at(1),
-  )
-
-  let oct-local-offsets = (
-    (-half, -apothem),
-    (half, -apothem),
-    (apothem, -half),
-    (apothem, half),
-    (half, apothem),
-    (-half, apothem),
-    (-apothem, half),
-    (-apothem, -half),
-  )
-  let diamond-local-offsets = (
-    (0, -diamond-radius),
-    (diamond-radius, 0),
-    (0, diamond-radius),
-    (-diamond-radius, 0),
-  )
-
-  let oct-key-offsets = (
-    (-2, -4),
-    (2, -4),
-    (4, -2),
-    (4, 2),
-    (2, 4),
-    (-2, 4),
-    (-4, 2),
-    (-4, -2),
-  )
-  let diamond-key-offsets = (
-    (0, -2),
-    (2, 0),
-    (0, 2),
-    (-2, 0),
-  )
-
   let append-unique = (items, value) => if value in items { items } else { items + (value,) }
-  let add-int = (a, b) => (a.at(0) + b.at(0), a.at(1) + b.at(1))
 
-  let qubit-by-key = (:)
-  let qubit-by-id = (:)
-  let qubit-order = ()
-  let faces = ()
-  let face-seeds = ()
+  if orientation == "pointy" {
+    let pitch = s * (1 + sqrt2)
+    let basis-step = pitch / 2
+    let diamond-radius = s * inv-sqrt2
 
-  for row in range(size.rows + 1) {
-    for col in range(size.cols + 1) {
-      let fq = 2 * col
-      let fr = 2 * row
-      let center-local = (col * pitch, row * pitch)
-      face-seeds += ((
-        fq: fq,
-        fr: fr,
-        center_local: center-local,
-        local_offsets: diamond-local-offsets,
-        key_offsets: diamond-key-offsets,
-        kind: "diamond",
-        color: "c2",
-      ),)
+    let map-point = (pt) => (
+      x0 + pt.at(0),
+      y0 + pt.at(1),
+    )
+
+    let oct-local-offsets = (
+      (-half, -apothem),
+      (half, -apothem),
+      (apothem, -half),
+      (apothem, half),
+      (half, apothem),
+      (-half, apothem),
+      (-apothem, half),
+      (-apothem, -half),
+    )
+    let square-local-offsets = (
+      (0, -diamond-radius),
+      (diamond-radius, 0),
+      (0, diamond-radius),
+      (-diamond-radius, 0),
+    )
+
+    let oct-key-offsets = (
+      (-2, -4),
+      (2, -4),
+      (4, -2),
+      (4, 2),
+      (2, 4),
+      (-2, 4),
+      (-4, 2),
+      (-4, -2),
+    )
+    let square-key-offsets = (
+      (0, -2),
+      (2, 0),
+      (0, 2),
+      (-2, 0),
+    )
+
+    let add-int = (a, b) => (a.at(0) + b.at(0), a.at(1) + b.at(1))
+
+    let qubit-by-key = (:)
+    let qubit-by-id = (:)
+    let qubit-order = ()
+    let faces = ()
+    let face-seeds = ()
+
+    for row in range(size.rows + 1) {
+      for col in range(size.cols + 1) {
+        let fq = 2 * col
+        let fr = 2 * row
+        let center-local = (col * pitch, row * pitch)
+        face-seeds += ((
+          fq: fq,
+          fr: fr,
+          center_local: center-local,
+          local_offsets: square-local-offsets,
+          key_offsets: square-key-offsets,
+          kind: "square",
+          color: "c2",
+        ),)
+      }
     }
-  }
 
-  for row in range(size.rows) {
-    for col in range(size.cols) {
-      let fq = 2 * col + 1
-      let fr = 2 * row + 1
-      let center-local = ((col + 0.5) * pitch, (row + 0.5) * pitch)
-      face-seeds += ((
-        fq: fq,
-        fr: fr,
-        center_local: center-local,
-        local_offsets: oct-local-offsets,
-        key_offsets: oct-key-offsets,
-        kind: "oct",
-        color: if calc.rem(col + row, 2) == 0 { "c0" } else { "c1" },
-      ),)
+    for row in range(size.rows) {
+      for col in range(size.cols) {
+        let fq = 2 * col + 1
+        let fr = 2 * row + 1
+        let center-local = ((col + 0.5) * pitch, (row + 0.5) * pitch)
+        face-seeds += ((
+          fq: fq,
+          fr: fr,
+          center_local: center-local,
+          local_offsets: oct-local-offsets,
+          key_offsets: oct-key-offsets,
+          kind: "oct",
+          color: if calc.rem(col + row, 2) == 0 { "c0" } else { "c1" },
+        ),)
+      }
     }
-  }
 
-  for seed in face-seeds {
-    let face-id = "f-" + str(seed.fq) + "-" + str(seed.fr)
-    let key-origin = (4 * seed.fq, 4 * seed.fr)
-    let face-qubits = ()
-    let face-verts = ()
-    for i in range(seed.local_offsets.len()) {
-      let rel = seed.local_offsets.at(i)
-      let local-pos = (seed.center_local.at(0) + rel.at(0), seed.center_local.at(1) + rel.at(1))
-      let world-pos = map-point(local-pos)
-      let key-vec = add-int(key-origin, seed.key_offsets.at(i))
-      let vertex-key = str(key-vec.at(0)) + "-" + str(key-vec.at(1))
+    for seed in face-seeds {
+      let face-id = "f-" + str(seed.fq) + "-" + str(seed.fr)
+      let key-origin = (4 * seed.fq, 4 * seed.fr)
+      let face-qubits = ()
+      let face-verts = ()
+      for i in range(seed.local_offsets.len()) {
+        let rel = seed.local_offsets.at(i)
+        let local-pos = (seed.center_local.at(0) + rel.at(0), seed.center_local.at(1) + rel.at(1))
+        let world-pos = map-point(local-pos)
+        let key-vec = add-int(key-origin, seed.key_offsets.at(i))
+        let vertex-key = str(key-vec.at(0)) + "-" + str(key-vec.at(1))
 
-      let qid = if vertex-key in qubit-by-key {
-        qubit-by-key.at(vertex-key)
-      } else {
-        let new-id = "q-" + vertex-key
-        qubit-by-key.insert(vertex-key, new-id)
-        qubit-order.push(new-id)
-        qubit-by-id.insert(new-id, (
-          id: new-id,
-          pos: world-pos,
-          "incident-faces": (),
-          "boundary-tags": (),
-          meta: (vertex-key: vertex-key),
+        let qid = if vertex-key in qubit-by-key {
+          qubit-by-key.at(vertex-key)
+        } else {
+          let new-id = "q-" + vertex-key
+          qubit-by-key.insert(vertex-key, new-id)
+          qubit-order.push(new-id)
+          qubit-by-id.insert(new-id, (
+            id: new-id,
+            pos: world-pos,
+            "incident-faces": (),
+            "boundary-tags": (),
+            meta: (vertex-key: vertex-key),
+          ))
+          new-id
+        }
+
+        let current = qubit-by-id.at(qid)
+        let incidents = append-unique(current.at("incident-faces"), face-id)
+        qubit-by-id.insert(qid, (
+          id: current.id,
+          pos: current.pos,
+          "incident-faces": incidents,
+          "boundary-tags": current.at("boundary-tags"),
+          meta: current.meta,
         ))
-        new-id
+        face-qubits = append-unique(face-qubits, qid)
+        face-verts += (qubit-by-id.at(qid).pos,)
       }
 
-      let current = qubit-by-id.at(qid)
-      let incidents = append-unique(current.at("incident-faces"), face-id)
-      qubit-by-id.insert(qid, (
-        id: current.id,
-        pos: current.pos,
-        "incident-faces": incidents,
-        "boundary-tags": current.at("boundary-tags"),
-        meta: current.meta,
+      faces.push((
+        id: face-id,
+        kind: seed.kind,
+        color: seed.color,
+        center: map-point(seed.center_local),
+        vertices: face-verts,
+        qubits: face-qubits,
+        meta: (
+          grid: (q: seed.fq, r: seed.fr),
+          shape: "rect",
+          tiling: "4.8.8",
+          orientation: orientation,
+        ),
       ))
-      face-qubits = append-unique(face-qubits, qid)
-      face-verts += (qubit-by-id.at(qid).pos,)
     }
 
-    faces.push((
-      id: face-id,
-      kind: seed.kind,
-      color: seed.color,
-      center: map-point(seed.center_local),
-      vertices: face-verts,
-      qubits: face-qubits,
-      meta: (
-        grid: (q: seed.fq, r: seed.fr),
-        shape: "rect",
-        tiling: "4.8.8",
-      ),
-    ))
-  }
-
-  let boundary-qubits = ()
-  for qid in qubit-order {
-    let qubit = qubit-by-id.at(qid)
-    let degree = qubit.at("incident-faces").len()
-    let tags = if degree < 3 { ("boundary",) } else { () }
-    if tags.len() > 0 {
-      boundary-qubits = append-unique(boundary-qubits, qid)
+    let boundary-qubits = ()
+    for qid in qubit-order {
+      let qubit = qubit-by-id.at(qid)
+      let degree = qubit.at("incident-faces").len()
+      let tags = if degree < 3 { ("boundary",) } else { () }
+      if tags.len() > 0 {
+        boundary-qubits = append-unique(boundary-qubits, qid)
+      }
+      qubit-by-id.insert(qid, (
+        id: qubit.id,
+        pos: qubit.pos,
+        "incident-faces": qubit.at("incident-faces"),
+        "boundary-tags": tags,
+        meta: (
+          vertex-key: qubit.meta.vertex-key,
+          degree: degree,
+        ),
+      ))
     }
-    qubit-by-id.insert(qid, (
-      id: qubit.id,
-      pos: qubit.pos,
-      "incident-faces": qubit.at("incident-faces"),
-      "boundary-tags": tags,
-      meta: (
-        vertex-key: qubit.meta.vertex-key,
-        degree: degree,
-      ),
-    ))
-  }
 
-  let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
-  let has-diagonal-basis = size.cols >= 1 and size.rows >= 1
-  let basis_origin_local = if has-diagonal-basis {
-    ((size.cols - 1) * basis-step, 0)
-  } else {
-    (0, 0)
-  }
-  let basis-origin = map-point(basis_origin_local)
-  let basis-x-point = if has-diagonal-basis {
-    map-point((basis_origin_local.at(0) + basis-step, basis-step))
-  } else {
-    map-point((basis-step, basis-step))
-  }
-  let basis-y-point = if has-diagonal-basis {
-    map-point((basis_origin_local.at(0) - basis-step, basis-step))
-  } else {
-    map-point((-basis-step, basis-step))
-  }
-  (
-    faces: faces,
-    qubits: qubits,
-    boundaries: (
-      qubits: boundary-qubits,
-    ),
-    basis: (
-      origin: basis-origin,
-      // Expose the diagonal reading frame directly from the rotated geometry.
-      x: (
-        basis-x-point.at(0) - basis-origin.at(0),
-        basis-x-point.at(1) - basis-origin.at(1),
+    let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
+    let has-diagonal-basis = size.cols >= 1 and size.rows >= 1
+    let basis-origin-local = if has-diagonal-basis {
+      ((size.cols - 1) * basis-step, 0)
+    } else {
+      (0, 0)
+    }
+    let basis-origin = map-point(basis-origin-local)
+    let basis-x-point = if has-diagonal-basis {
+      map-point((basis-origin-local.at(0) + basis-step, basis-step))
+    } else {
+      map-point((basis-step, basis-step))
+    }
+    let basis-y-point = if has-diagonal-basis {
+      map-point((basis-origin-local.at(0) - basis-step, basis-step))
+    } else {
+      map-point((-basis-step, basis-step))
+    }
+    (
+      faces: faces,
+      qubits: qubits,
+      boundaries: (
+        qubits: boundary-qubits,
       ),
-      y: (
-        basis-y-point.at(0) - basis-origin.at(0),
-        basis-y-point.at(1) - basis-origin.at(1),
+      basis: (
+        origin: basis-origin,
+        x: (
+          basis-x-point.at(0) - basis-origin.at(0),
+          basis-x-point.at(1) - basis-origin.at(1),
+        ),
+        y: (
+          basis-y-point.at(0) - basis-origin.at(0),
+          basis-y-point.at(1) - basis-origin.at(1),
+        ),
+        scale: scale,
+        orientation: orientation,
+        reading: "45deg",
+        "center-step": basis-step,
       ),
-      scale: scale,
-      reading: "45deg",
-      "center-step": basis-step,
-    ),
-  )
+    )
+  } else {
+    let step = apothem + half
+
+    let map-point = (pt) => (
+      x0 + pt.at(0),
+      y0 + pt.at(1),
+    )
+    let quantize = (value) => calc.round(value * 1000000)
+    let vertex-key = (pt) => str(quantize(pt.at(0) / s)) + "-" + str(quantize(pt.at(1) / s))
+
+    let oct-local-offsets = (
+      (-half, apothem),
+      (half, apothem),
+      (apothem, half),
+      (apothem, -half),
+      (half, -apothem),
+      (-half, -apothem),
+      (-apothem, -half),
+      (-apothem, half),
+    )
+    let square-local-offsets = (
+      (-half, half),
+      (half, half),
+      (half, -half),
+      (-half, -half),
+    )
+
+    let qubit-by-key = (:)
+    let qubit-by-id = (:)
+    let qubit-order = ()
+    let faces = ()
+    let grid-rows = size.rows * 2 - 1
+    let grid-cols = size.cols * 2 - 1
+
+    for r in range(grid-rows) {
+      for q in range(grid-cols) {
+        let is-oct = calc.rem(q + r, 2) == 0
+        let center-local = (q * step, r * step)
+        let face-id = "f-" + str(q) + "-" + str(r)
+        let face-qubits = ()
+        let face-verts = ()
+        let local-offsets = if is-oct { oct-local-offsets } else { square-local-offsets }
+
+        for rel in local-offsets {
+          let local-pos = (center-local.at(0) + rel.at(0), center-local.at(1) + rel.at(1))
+          let world-pos = map-point(local-pos)
+          let qkey = vertex-key(local-pos)
+
+          let qid = if qkey in qubit-by-key {
+            qubit-by-key.at(qkey)
+          } else {
+            let new-id = "q-" + qkey
+            qubit-by-key.insert(qkey, new-id)
+            qubit-order.push(new-id)
+            qubit-by-id.insert(new-id, (
+              id: new-id,
+              pos: world-pos,
+              "incident-faces": (),
+              "boundary-tags": (),
+              meta: (vertex-key: qkey),
+            ))
+            new-id
+          }
+
+          let current = qubit-by-id.at(qid)
+          let incidents = append-unique(current.at("incident-faces"), face-id)
+          qubit-by-id.insert(qid, (
+            id: current.id,
+            pos: current.pos,
+            "incident-faces": incidents,
+            "boundary-tags": current.at("boundary-tags"),
+            meta: current.meta,
+          ))
+          face-qubits = append-unique(face-qubits, qid)
+          face-verts += (qubit-by-id.at(qid).pos,)
+        }
+
+        faces.push((
+          id: face-id,
+          kind: if is-oct { "oct" } else { "square" },
+          color: if is-oct {
+            if calc.rem(q, 2) == 0 { "c0" } else { "c1" }
+          } else {
+            "c2"
+          },
+          center: map-point(center-local),
+          vertices: face-verts,
+          qubits: face-qubits,
+          meta: (
+            grid: (q: q, r: r),
+            parity: calc.rem(q + r, 2),
+            shape: "rect",
+            tiling: "4.8.8",
+            orientation: orientation,
+          ),
+        ))
+      }
+    }
+
+    let boundary-qubits = ()
+    for qid in qubit-order {
+      let qubit = qubit-by-id.at(qid)
+      let degree = qubit.at("incident-faces").len()
+      let tags = if degree < 3 { ("boundary",) } else { () }
+      if tags.len() > 0 {
+        boundary-qubits = append-unique(boundary-qubits, qid)
+      }
+      qubit-by-id.insert(qid, (
+        id: qubit.id,
+        pos: qubit.pos,
+        "incident-faces": qubit.at("incident-faces"),
+        "boundary-tags": tags,
+        meta: (
+          vertex-key: qubit.meta.vertex-key,
+          degree: degree,
+        ),
+      ))
+    }
+
+    let qubits = qubit-order.map((qid) => qubit-by-id.at(qid))
+    (
+      faces: faces,
+      qubits: qubits,
+      boundaries: (
+        qubits: boundary-qubits,
+      ),
+      basis: (
+        origin: map-point((0, 0)),
+        x: (step, 0),
+        y: (0, step),
+        scale: scale,
+        orientation: orientation,
+        reading: "axis",
+        "center-step": step,
+      ),
+    )
+  }
 }
 
 #let color-code-2d(
@@ -1362,7 +1504,7 @@
   tiling: "6.6.6",
   shape: "rect",
   size: none,
-  hex-orientation: "flat",
+  orientation: "flat",
   scale: 1,
   color1: yellow,
   color2: aqua,
@@ -1380,7 +1522,7 @@
     tiling: tiling,
     shape: shape,
     size: size,
-    hex-orientation: hex-orientation,
+    orientation: orientation,
     scale: scale,
     color1: color1,
     color2: color2,
@@ -1399,7 +1541,7 @@
       loc,
       shape: shape,
       size: size,
-      hex-orientation: hex-orientation,
+      orientation: orientation,
       scale: scale,
     )
   } else if tiling == "4.8.8" {
@@ -1407,6 +1549,7 @@
       loc,
       shape: shape,
       size: size,
+      orientation: orientation,
       scale: scale,
     )
   } else if tiling == "4.6.12" {
@@ -1425,7 +1568,7 @@
   let boundaries = if canonical == none { () } else { canonical.boundaries }
   let basis = if canonical == none {
     (
-      hex-orientation: hex-orientation,
+      orientation: orientation,
       scale: scale,
     )
   } else {
@@ -1521,7 +1664,7 @@
         tiling: tiling,
         shape: shape,
         size: size,
-        hex-orientation: hex-orientation,
+        orientation: orientation,
         scale: scale,
         color1: color1,
         color2: color2,
