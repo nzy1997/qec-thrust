@@ -113,39 +113,10 @@ The returned object exposes:
 
 For `tiling: "6.6.6"`, supported shapes are `rect`, `para`, `tri`, `tri-cut`, and `hex`. `hex-orientation` can be `"flat"` or `"pointy"` for the non-hex patches (`tri-cut` requires `"flat"`). Tuple shorthand such as `(0, 0)` for faces and `(2, 0)` for qubits is accepted for the simple `6.6.6` and `4.8.8` id schemes.
 
-The bundled `examples/color_code_666.typ` now shows the supported `6.6.6` boundary shapes and orientations without annotations, while `examples/color_code_666_plot1.typ` composes the object API into a plot1-style four-panel figure.
+The bundled `examples/color_code_666.typ` now shows the supported `6.6.6` boundary shapes and orientations without annotations, while `examples/color_code_666_panels.typ` composes the object API into a four-panel figure with basis, stabilizer, anyon, and label views.
 
 ![2D color code](examples/color_code_666.png)
-![2D color code 6.6.6 plot1](examples/color_code_666_plot1.png)
-
-## 2D color code (6.6.6 hex patch)
-`shape: "hex"` builds a six-boundary patch with `size: (lx: ..., ly: ..., lz: ...)`.
-
-```typ
-#canvas({
-  import draw: content
-
-  let code = color-code-2d(
-    (0, 0),
-    tiling: "6.6.6",
-    shape: "hex",
-    size: (lx: 3, ly: 4, lz: 2),
-    hex-orientation: "flat",
-    scale: 1.0,
-    name: "color-666-hex",
-    show-qubits: true,
-    qubit-radius: 0.08,
-  )
-
-  (code.draw-background)()
-  content((code.face-anchor)((0, 0)), [hex-f])
-  content((code.qubit-anchor)((2, 0)), [hex-q])
-})
-```
-
-The boundary qubits are available via `code.boundaries.qubits`, and the six colored sides are split into `code.boundaries.x+`, `y+`, `z+`, `x-`, `y-`, and `z-`.
-
-![2D color code 6.6.6 hex](examples/color_code_666_hex.png)
+![2D color code 6.6.6 panels](examples/color_code_666_panels.png)
 
 ## 2D color code (4.8.8)
 `tiling: "4.8.8"` now uses the same object API, keeps `size: (rows: ..., cols: ...)` as a rectangular patch boundary, and exposes a geometry-derived 45-degree reading frame through `code.basis.origin`, `code.basis.x`, and `code.basis.y`.
@@ -169,13 +140,10 @@ The boundary qubits are available via `code.boundaries.qubits`, and the six colo
 })
 ```
 
-See `examples/color_code_488_reference.typ` for a reference-style figure that reads the basis vectors directly from the object and annotates one face and one qubit through anchors.
-
-The bundled `examples/color_code_488.typ` now shows the same rectangular `4.8.8` patch under several viewing rotations, and `examples/color_code_488_plot1.typ` composes the basis, stabilizer, anyon, and debug panels on one canvas.
+The bundled `examples/color_code_488.typ` now shows the same rectangular `4.8.8` patch under several viewing rotations, and `examples/color_code_488_panels.typ` composes the basis, stabilizer, anyon, and label panels on one canvas.
 
 ![2D color code 4.8.8](examples/color_code_488.png)
-![2D color code 4.8.8 plot1](examples/color_code_488_plot1.png)
-![2D color code 4.8.8 reference](examples/color_code_488_reference.png)
+![2D color code 4.8.8 panels](examples/color_code_488_panels.png)
 
 ## 2D color code (4.6.12)
 `tiling: "4.6.12"` also returns the shared object shape. Currently only `shape: "rect"` is implemented. Stable face ids use the canonical prefixes `f-dod-*`, `f-sq-*`, and `f-hex-*`.

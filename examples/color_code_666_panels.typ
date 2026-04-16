@@ -6,5 +6,5 @@
 #show math.equation: set text(font: "New Computer Modern Math")
 
 #canvas({
-  draw-666-plot1()
+  draw-666-panels()
 })

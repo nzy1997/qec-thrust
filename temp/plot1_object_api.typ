@@ -220,7 +220,7 @@
   content(pt-scale(pt-add(a, c), 0.5), anchor: "north", padding: 15pt, text(size: 16pt)[$x^3 = 1$])
 }
 
-#let draw-666-debug(loc: (0, 0), name: "obj-666-debug") = {
+#let draw-666-label(loc: (0, 0), name: "obj-666-label") = {
   import draw: *
   let code = make-666(loc: loc, name: name)
   draw-base(code)
@@ -347,7 +347,7 @@
   content(pt-scale(pt-add(a, c), 0.5), anchor: "south-east", padding: 10pt, text(size: 16pt)[$x y = 1$])
 }
 
-#let draw-488-debug(loc: (0, 0), name: "obj-488-debug") = {
+#let draw-488-label(loc: (0, 0), name: "obj-488-label") = {
   import draw: *
   let code = make-488(loc: loc, name: name)
   draw-base(code)
@@ -362,10 +362,10 @@
 
 #let panel-title(pos, body, size: 12pt) = {
   import draw: content
-  content(pos, text(size: size)[#body])
+  content(pos, anchor: "south-west", text(size: size)[#body])
 }
 
-#let draw-666-plot1(loc: (0, 0), gap-x: 11.2, gap-y: 9.8) = {
+#let draw-666-panels(loc: (0, 0), gap-x: 11.2, gap-y: 9.8) = {
   let p00 = loc
   let p10 = pt-add(loc, (gap-x, 0))
   let p01 = pt-add(loc, (0, -gap-y))
@@ -374,15 +374,15 @@
   draw-666-basis(loc: p00, name: "obj-666-basis-panel")
   draw-666-stabilizers(loc: p10, name: "obj-666-stabilizers-panel")
   draw-666-anyon(loc: p01, name: "obj-666-anyon-panel")
-  draw-666-debug(loc: p11, name: "obj-666-debug-panel")
+  draw-666-label(loc: p11, name: "obj-666-label-panel")
 
-  panel-title(pt-add(p00, (0, 4.5)), [basis])
-  panel-title(pt-add(p10, (0, 4.5)), [stabilizers])
-  panel-title(pt-add(p01, (0, 4.5)), [anyon])
-  panel-title(pt-add(p11, (0, 4.5)), [debug])
+  panel-title(pt-add(p00, (-2.1, 5.2)), [basis])
+  panel-title(pt-add(p10, (-2.1, 5.2)), [stabilizers])
+  panel-title(pt-add(p01, (-2.1, 5.2)), [anyon])
+  panel-title(pt-add(p11, (-2.1, 5.2)), [label])
 }
 
-#let draw-488-plot1(loc: (0, 0), gap-x: 12.2, gap-y: 11.0) = {
+#let draw-488-panels(loc: (0, 0), gap-x: 12.2, gap-y: 11.0) = {
   let p00 = loc
   let p10 = pt-add(loc, (gap-x, 0))
   let p01 = pt-add(loc, (0, -gap-y))
@@ -391,10 +391,10 @@
   draw-488-basis(loc: p00, name: "obj-488-basis-panel")
   draw-488-stabilizers(loc: p10, name: "obj-488-stabilizers-panel")
   draw-488-anyon(loc: p01, name: "obj-488-anyon-panel")
-  draw-488-debug(loc: p11, name: "obj-488-debug-panel")
+  draw-488-label(loc: p11, name: "obj-488-label-panel")
 
-  panel-title(pt-add(p00, (0, 6.3)), [basis])
-  panel-title(pt-add(p10, (0, 6.3)), [stabilizers])
-  panel-title(pt-add(p01, (0, 6.3)), [anyon])
-  panel-title(pt-add(p11, (0, 6.3)), [debug])
+  panel-title(pt-add(p00, (-1.9, 6.9)), [basis])
+  panel-title(pt-add(p10, (-1.9, 6.9)), [stabilizers])
+  panel-title(pt-add(p01, (-1.9, 6.9)), [anyon])
+  panel-title(pt-add(p11, (-1.9, 6.9)), [label])
 }
