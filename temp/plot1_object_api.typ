@@ -25,6 +25,10 @@
 
 #let pt-add(a, b) = (a.at(0) + b.at(0), a.at(1) + b.at(1))
 #let pt-scale(p, s) = (p.at(0) * s, p.at(1) * s)
+#let pt-lerp(a, b, t) = (
+  a.at(0) + (b.at(0) - a.at(0)) * t,
+  a.at(1) + (b.at(1) - a.at(1)) * t,
+)
 #let dist2(a, b) = {
   let dx = a.at(0) - b.at(0)
   let dy = a.at(1) - b.at(1)
@@ -98,6 +102,13 @@
   }
 }
 
+#let face-qubit-id(code, face, idx) = face.qubits.at(idx)
+#let face-qubit-pos(code, face, idx) = find-qubit(code, face-qubit-id(code, face, idx)).pos
+
+#let old-488-oct-index(idx) = idx
+#let old-488-oct-id(code, face, idx) = face.qubits.at(old-488-oct-index(idx))
+#let old-488-oct-pos(code, face, idx) = find-qubit(code, old-488-oct-id(code, face, idx)).pos
+
 #let label-dot(pos, body, fill: white, stroke: black) = {
   import draw: content
   content(
@@ -154,21 +165,21 @@
   draw-base(code)
 
   let face = find-face(code, (0, 0))
-  let q1-id = face.qubits.at(3)
-  let q2-id = face.qubits.at(5)
-  let q1 = find-qubit(code, q1-id).pos
-  let q2 = find-qubit(code, q2-id).pos
-  let qy = nearest-qubit(code, pt-add(q1, (0, -2.0)), exclude: q1-id).pos
+  let y-face = find-face(code, (-1, 1))
+  let q1 = face-qubit-pos(code, face, 3)
+  let q2 = face-qubit-pos(code, face, 4)
+  let qx = face-qubit-pos(code, face, 5)
+  let qy = face-qubit-pos(code, y-face, 1)
 
   highlight-pos(q1, cyan-fill)
   highlight-pos(q2, magenta-fill)
-  line(q1, q2, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.7))
+  line(q1, qx, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.7))
   line(q1, qy, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.7))
 
   label-dot(q1, text(size: 14pt)[$1$], fill: cyan-fill)
   label-dot(q2, text(size: 14pt)[$2$], fill: magenta-fill)
-  content(pt-add(q2, (0.45, 0.3)), text(size: 18pt)[$x$])
-  content(pt-add(qy, (0.0, -0.45)), text(size: 18pt)[$y$])
+  content(qx, anchor: "north-west", padding: 3pt, text(size: 18pt)[$x$])
+  content(qy, anchor: "south", padding: 5pt, text(size: 18pt)[$y$])
 }
 
 #let draw-666-stabilizers() = {
@@ -177,26 +188,27 @@
   draw-base(code)
 
   let face = find-face(code, (0, 0))
-  let qs = face.qubits.map((qid) => find-qubit(code, qid).pos)
+  let q0 = face-qubit-pos(code, face, 0)
+  let q1 = face-qubit-pos(code, face, 1)
+  let q2 = face-qubit-pos(code, face, 2)
+  let q3 = face-qubit-pos(code, face, 3)
+  let q4 = face-qubit-pos(code, face, 4)
+  let q5 = face-qubit-pos(code, face, 5)
   for (i, qid) in face.qubits.enumerate() {
     let fill = if calc.even(i) { magenta-fill } else { cyan-fill }
     (code.highlight-qubit)(qid, radius: 0.17, fill: fill, stroke: (paint: black, thickness: 0.8pt))
   }
 
-  line(qs.at(0), qs.at(2), stroke: dashed-stroke)
-  line(qs.at(2), qs.at(4), stroke: dashed-stroke)
-  line(qs.at(4), qs.at(0), stroke: dashed-stroke)
-  line(qs.at(1), qs.at(3), stroke: dashed-stroke)
-  line(qs.at(3), qs.at(5), stroke: dashed-stroke)
-  line(qs.at(5), qs.at(1), stroke: dashed-stroke)
+  line(pt-lerp(q3, q1, 0.1), pt-lerp(q3, q1, 0.9), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(q3, q5, 0.1), pt-lerp(q3, q5, 0.9), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(q4, q2, 0.1), pt-lerp(q4, q2, 0.9), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(q4, q0, 0.1), pt-lerp(q4, q0, 0.9), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
 
-  let center = face.center
-  content(pt-add(qs.at(1), (-0.45, -0.35)), text(size: 18pt)[$y$])
-  content(pt-add(qs.at(0), (0.15, -0.35)), text(size: 18pt)[$x y$])
-  content(pt-add(qs.at(5), (0.2, 0.55)), text(size: 18pt)[$x$])
-  content(pt-add(qs.at(0), (1.05, 0.1)), text(size: 18pt)[$x y$])
-  content(pt-add(center, (-3.2, -0.25)), text(size: 16pt, fill: cyan-fill)[$1+x+x y$])
-  content(pt-add(center, (-3.0, 0.55)), text(size: 16pt, fill: magenta-fill)[$1+y+x y$])
+  content(q1, anchor: "south-west", padding: 5pt, text(size: 18pt)[$x y$])
+  content(q5, anchor: "north-west", padding: 5pt, text(size: 18pt)[$x$])
+  content(q2, anchor: "south-east", padding: 5pt, text(size: 18pt)[$y$])
+  content(q0, anchor: "west", padding: 8pt, text(size: 18pt)[$x y$])
+  content(q3, anchor: "east", padding: 10pt, text(size: 16pt)[$vec(#text(fill: cyan-fill)[$1 + x + x y$], #text(fill: magenta-fill)[$1 + y + x y$])$])
 }
 
 #let draw-666-anyon() = {
@@ -204,17 +216,17 @@
   let code = make-666(name: "obj-666-anyon")
   draw-base(code)
 
-  let a = find-face(code, (-1, 0)).center
-  let b = find-face(code, (1, -1)).center
-  let c = find-face(code, (1, 1)).center
+  let a = find-face(code, (-1, 1)).center
+  let b = find-face(code, (1, 0)).center
+  let c = find-face(code, (2, -2)).center
 
   for pos in (a, b, c) {
     circle(pos, radius: 0.28, fill: anyon-fill, stroke: (paint: black, thickness: 0.8pt))
   }
-  line(a, b, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.6))
-  line(a, c, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.6))
-  content(pt-add(pt-scale(pt-add(a, b), 0.5), (-0.2, -0.55)), text(size: 16pt)[$x^2 y = 1$])
-  content(pt-add(pt-scale(pt-add(a, c), 0.5), (0.0, 0.55)), text(size: 16pt)[$x^3 = 1$])
+  line(pt-lerp(a, b, 0.1), pt-lerp(a, b, 0.9), stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(a, c, 0.05), pt-lerp(a, c, 0.94), stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  content(pt-scale(pt-add(a, b), 0.5), anchor: "south", padding: 15pt, text(size: 16pt)[$x^2 y = 1$])
+  content(pt-scale(pt-add(a, c), 0.5), anchor: "north", padding: 15pt, text(size: 16pt)[$x^3 = 1$])
 }
 
 #let draw-666-debug() = {
@@ -236,23 +248,30 @@
   draw-base(code)
 
   let square = find-face(code, (2, 2))
+  let oct = find-face(code, (3, 3))
   let origin = square.center
   let px = find-face(code, (4, 2)).center
   let py = find-face(code, (2, 4)).center
 
   line(origin, px, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.7))
   line(origin, py, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.7))
-  content(pt-add(px, (0.25, 0.05)), text(size: 18pt)[$x$])
-  content(pt-add(py, (-0.1, -0.45)), text(size: 18pt)[$y$])
+  content(px, anchor: "west", padding: 5pt, text(size: 18pt)[$x$])
+  content(py, anchor: "south", padding: 5pt, text(size: 18pt)[$y$])
 
-  let fills = (cyan-fill, soft-blue.darken(20%), cyan-fill.darken(15%), magenta-fill)
-  for (i, qid) in square.qubits.enumerate() {
-    (code.highlight-qubit)(qid, radius: 0.17, fill: fills.at(i), stroke: (paint: black, thickness: 0.8pt))
-  }
-  label-dot(find-qubit(code, square.qubits.at(1)).pos, text(size: 14pt)[$1$], fill: fills.at(1))
-  label-dot(find-qubit(code, square.qubits.at(2)).pos, text(size: 14pt)[$2$], fill: fills.at(2))
-  label-dot(find-qubit(code, square.qubits.at(3)).pos, text(size: 14pt)[$3$], fill: fills.at(3))
-  label-dot(find-qubit(code, square.qubits.at(0)).pos, text(size: 14pt)[$4$], fill: fills.at(0))
+  let q1 = face-qubit-id(code, square, 1)
+  let q3 = face-qubit-id(code, square, 2)
+  let q2 = old-488-oct-id(code, oct, 1)
+  let q4 = old-488-oct-id(code, oct, 6)
+
+  (code.highlight-qubit)(q1, radius: 0.17, fill: cyan-fill, stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(q3, radius: 0.17, fill: rgb("#37b7c7"), stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(q2, radius: 0.17, fill: aqua, stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(q4, radius: 0.17, fill: magenta-fill, stroke: (paint: black, thickness: 0.8pt))
+
+  label-dot(find-qubit(code, q3).pos, text(size: 14pt)[$3$], fill: rgb("#37b7c7"))
+  label-dot(find-qubit(code, q1).pos, text(size: 14pt)[$1$], fill: cyan-fill)
+  label-dot(find-qubit(code, q2).pos, text(size: 14pt)[$2$], fill: aqua)
+  label-dot(find-qubit(code, q4).pos, text(size: 14pt)[$4$], fill: magenta-fill)
 }
 
 #let draw-488-stabilizers() = {
@@ -260,46 +279,63 @@
   let code = make-488(name: "obj-488-stabilizers")
   draw-base(code)
 
-  let square = find-face(code, (2, 2))
+  let sq1 = find-face(code, (2, 2))
+  let sq2 = find-face(code, (4, 4))
   let oct = find-face(code, (3, 3))
-  let sq-colors = (magenta-fill, cyan-fill, orange-fill, aqua)
-  let oct-colors = (cyan-fill, aqua, orange-fill, white, white, cyan-fill, magenta-fill, orange-fill)
+  let left-legend = find-face(code, (1, 3)).center
+  let right-legend = find-face(code, (5, 5)).center
+  let sq-up = find-face(code, (2, 4))
 
-  for (i, qid) in square.qubits.enumerate() {
-    (code.highlight-qubit)(qid, radius: 0.17, fill: sq-colors.at(i), stroke: (paint: black, thickness: 0.8pt))
-  }
-  for (i, qid) in oct.qubits.enumerate() {
-    let fill = oct-colors.at(i)
-    if fill != white {
-      (code.highlight-qubit)(qid, radius: 0.17, fill: fill, stroke: (paint: black, thickness: 0.8pt))
+  let sq1-q1 = face-qubit-pos(code, sq1, 1)
+  let sq1-q2 = face-qubit-pos(code, sq1, 2)
+  let sq2-q0 = face-qubit-id(code, sq2, 0)
+  let sq2-q1 = face-qubit-id(code, sq2, 1)
+  let sq2-q2 = face-qubit-id(code, sq2, 2)
+  let sq2-q3 = face-qubit-id(code, sq2, 3)
+  let sq-up-q1 = face-qubit-pos(code, sq-up, 1)
+
+  let oct-q0 = old-488-oct-pos(code, oct, 0)
+  let oct-q1 = old-488-oct-pos(code, oct, 1)
+  let oct-q2 = old-488-oct-pos(code, oct, 2)
+  let oct-q3 = old-488-oct-pos(code, oct, 3)
+  let oct-q4 = old-488-oct-pos(code, oct, 4)
+  let oct-q5 = old-488-oct-pos(code, oct, 5)
+  let oct-q6 = old-488-oct-pos(code, oct, 6)
+  let oct-q7 = old-488-oct-pos(code, oct, 7)
+
+  line(pt-lerp(sq1-q1, sq-up-q1, 0.08), pt-lerp(sq1-q1, sq-up-q1, 0.92), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(oct-q1, oct-q4, 0.08), pt-lerp(oct-q1, oct-q4, 0.92), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(oct-q6, oct-q3, 0.08), pt-lerp(oct-q6, oct-q3, 0.92), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(oct-q7, oct-q2, 0.08), pt-lerp(oct-q7, oct-q2, 0.92), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(sq1-q1, face-qubit-pos(code, sq2, 1), 0.05), pt-lerp(sq1-q1, face-qubit-pos(code, sq2, 1), 0.95), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(sq1-q2, face-qubit-pos(code, sq2, 2), 0.05), pt-lerp(sq1-q2, face-qubit-pos(code, sq2, 2), 0.95), stroke: dashed-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+
+  content(oct-q4, anchor: "south", padding: 8pt, text(size: 18pt)[$y$])
+  content(oct-q5, anchor: "south", padding: 8pt, text(size: 18pt)[$y$])
+  content(oct-q2, anchor: "west", padding: 8pt, text(size: 18pt)[$x$])
+  content(oct-q3, anchor: "west", padding: 8pt, text(size: 18pt)[$x$])
+  content(face-qubit-pos(code, sq2, 2), anchor: "south", padding: 8pt, text(size: 18pt)[$x y$])
+  content(face-qubit-pos(code, sq2, 1), anchor: "west", padding: 8pt, text(size: 18pt)[$x y$])
+
+  (code.highlight-qubit)(sq2-q0, radius: 0.17, fill: magenta-fill, stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(sq2-q1, radius: 0.17, fill: cyan-fill, stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(sq2-q2, radius: 0.17, fill: orange-fill, stroke: (paint: black, thickness: 0.8pt))
+  (code.highlight-qubit)(sq2-q3, radius: 0.17, fill: aqua, stroke: (paint: black, thickness: 0.8pt))
+  for idx in (0, 1, 2, 5, 6, 7) {
+    let old-fill = if idx == 0 or idx == 5 {
+      cyan-fill
+    } else if idx == 1 {
+      aqua
+    } else if idx == 6 {
+      magenta-fill
+    } else {
+      orange-fill
     }
+    (code.highlight-qubit)(old-488-oct-id(code, oct, idx), radius: 0.17, fill: old-fill, stroke: (paint: black, thickness: 0.8pt))
   }
 
-  let s = square.qubits.map((qid) => find-qubit(code, qid).pos)
-  let o = oct.qubits.map((qid) => find-qubit(code, qid).pos)
-  line(s.at(0), s.at(2), stroke: dashed-stroke)
-  line(s.at(1), s.at(3), stroke: dashed-stroke)
-  line(o.at(6), o.at(2), stroke: dashed-stroke)
-  line(o.at(7), o.at(3), stroke: dashed-stroke)
-  line(s.at(0), o.at(6), stroke: dashed-stroke)
-  line(s.at(1), o.at(7), stroke: dashed-stroke)
-
-  content(pt-add(o.at(6), (-0.2, -0.35)), text(size: 18pt)[$x y$])
-  content(pt-add(o.at(2), (0.2, 0.0)), text(size: 18pt)[$x y$])
-  content(pt-add(o.at(5), (-0.55, -0.15)), text(size: 18pt)[$y$])
-  content(pt-add(o.at(3), (0.2, 0.55)), text(size: 18pt)[$x$])
-  content(pt-add(s.at(0), (-0.65, 0.1)), text(size: 18pt)[$y$])
-  content(pt-add(s.at(1), (0.15, 0.6)), text(size: 18pt)[$x$])
-
-  content(pt-add(square.center, (-2.55, 0.2)), text(size: 15pt, fill: cyan-fill)[$1+y$])
-  content(pt-add(square.center, (-2.55, 0.8)), text(size: 15pt, fill: soft-blue.darken(20%))[$1+y$])
-  content(pt-add(square.center, (-2.55, 1.4)), text(size: 15pt, fill: orange-fill)[$1+x$])
-  content(pt-add(square.center, (-2.55, 2.0)), text(size: 15pt, fill: magenta-fill)[$1+x$])
-
-  content(pt-add(oct.center, (1.55, -1.5)), text(size: 15pt, fill: cyan-fill)[$x y$])
-  content(pt-add(oct.center, (1.7, -0.9)), text(size: 15pt, fill: aqua)[$y$])
-  content(pt-add(oct.center, (1.55, -0.3)), text(size: 15pt, fill: orange-fill)[$x y$])
-  content(pt-add(oct.center, (1.7, 0.3)), text(size: 15pt, fill: magenta-fill)[$x$])
+  content(left-legend, text(size: 15pt)[$vec(#text(fill: cyan-fill)[$1 + y$], #text(fill: aqua)[$1 + y$], #text(fill: orange-fill)[$1 + x$], #text(fill: magenta-fill)[$1 + x$])$])
+  content(right-legend, text(size: 15pt)[$vec(#text(fill: cyan-fill)[$x y$], #text(fill: aqua)[$y$], #text(fill: orange-fill)[$x y$], #text(fill: magenta-fill)[$x$])$])
 }
 
 #let draw-488-anyon() = {
@@ -308,16 +344,16 @@
   draw-base(code)
 
   let a = find-face(code, (1, 3)).center
-  let b = find-face(code, (3, 1)).center
-  let c = find-face(code, (5, 3)).center
+  let b = find-face(code, (5, 3)).center
+  let c = find-face(code, (3, 5)).center
 
   for pos in (a, b, c) {
     circle(pos, radius: 0.28, fill: anyon-fill, stroke: (paint: black, thickness: 0.8pt))
   }
-  line(a, b, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.6))
-  line(a, c, stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.6))
-  content(pt-add(pt-scale(pt-add(a, b), 0.5), (-0.35, -0.4)), text(size: 16pt)[$x y = 1$])
-  content(pt-add(pt-scale(pt-add(a, c), 0.5), (0.0, 0.55)), text(size: 16pt)[$x^2 = 1$])
+  line(pt-lerp(a, b, 0.05), pt-lerp(a, b, 0.94), stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  line(pt-lerp(a, c, 0.05), pt-lerp(a, c, 0.92), stroke: arrow-stroke, mark: (end: "stealth", fill: black, stroke: (dash: "solid"), scale: 0.5))
+  content(pt-scale(pt-add(a, b), 0.5), anchor: "north", padding: 10pt, text(size: 16pt)[$x^2 = 1$])
+  content(pt-scale(pt-add(a, c), 0.5), anchor: "south-east", padding: 10pt, text(size: 16pt)[$x y = 1$])
 }
 
 #let draw-488-debug() = {
