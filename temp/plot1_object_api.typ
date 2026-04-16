@@ -360,9 +360,9 @@
   }
 }
 
-#let panel-title(pos, body, size: 12pt) = {
+#let panel-title(pos, body, size: 10pt) = {
   import draw: content
-  content(pos, anchor: "south-west", text(size: size)[#body])
+  content(pos, anchor: "north", text(size: size)[#body])
 }
 
 #let draw-666-panels(loc: (0, 0), gap-x: 11.2, gap-y: 9.8) = {
@@ -376,10 +376,10 @@
   draw-666-anyon(loc: p01, name: "obj-666-anyon-panel")
   draw-666-label(loc: p11, name: "obj-666-label-panel")
 
-  panel-title(pt-add(p00, (-2.1, 5.2)), [basis])
-  panel-title(pt-add(p10, (-2.1, 5.2)), [stabilizers])
-  panel-title(pt-add(p01, (-2.1, 5.2)), [anyon])
-  panel-title(pt-add(p11, (-2.1, 5.2)), [label])
+  panel-title(pt-add(p00, (0, -4.55)), [basis])
+  panel-title(pt-add(p10, (0, -4.55)), [stabilizers])
+  panel-title(pt-add(p01, (0, -4.55)), [anyon])
+  panel-title(pt-add(p11, (0, -4.55)), [label])
 }
 
 #let draw-488-panels(loc: (0, 0), gap-x: 12.2, gap-y: 11.0) = {
@@ -393,8 +393,8 @@
   draw-488-anyon(loc: p01, name: "obj-488-anyon-panel")
   draw-488-label(loc: p11, name: "obj-488-label-panel")
 
-  panel-title(pt-add(p00, (-1.9, 6.9)), [basis])
-  panel-title(pt-add(p10, (-1.9, 6.9)), [stabilizers])
-  panel-title(pt-add(p01, (-1.9, 6.9)), [anyon])
-  panel-title(pt-add(p11, (-1.9, 6.9)), [label])
+  panel-title(pt-add(p00, (0, -5.2)), [basis])
+  panel-title(pt-add(p10, (0, -5.2)), [stabilizers])
+  panel-title(pt-add(p01, (0, -5.2)), [anyon])
+  panel-title(pt-add(p11, (0, -5.2)), [label])
 }
