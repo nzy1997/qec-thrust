@@ -20,18 +20,27 @@ You can draw a Steane code by calling the `steane-code` function. The name of th
 ![Steane code](examples/steane.png)
 
 ## Surface code
-You can draw a surface code with different size, color and orientation by `surface-code` function. The name of the qubits can be defined with `name` parameter as `name-i-j`. By default, they will be named as `surface-i-j`. The `type-tag` parameter can be set to `false` to change the orientation of the surface code. You can also tweak `point-radius` (relative to `size`) and `boundary-bulge` for the boundary curves. Here is an example of two surface codes.
+`surface-code(...)` now returns a reusable object API. Build the object first, call `code.draw-background()`, then annotate through stable helpers.
+
+- `code.qubits`: qubit records with stable ids `(i, j)`.
+- `code.qubit-anchor(id)`: anchor helper for downstream labels.
+- `code.highlight-qubit(id, ...)`: highlight a single surface qubit.
+- `type-tag: false` still flips the boundary orientation, and `point-radius` / `boundary-bulge` still control the geometry.
+
+Here is an example of two surface codes:
 ```typ
 #canvas({
   import draw: *
   let n = 3
-  surface-code((0, 0),size:1.5, n, n,name: "surface1")
+  let code1 = surface-code((0, 0), n, n, size: 1.5, name: "surface1")
+  (code1.draw-background)()
   for i in range(n) {
     for j in range(n) {
-      content((rel: (0.3, 0.3), to: "surface1" + "-" + str(i) + "-" + str(j)), [#(i*n+j+1)])
+      content((rel: (0.3, 0.3), to: (code1.qubit-anchor)((i, j))), [#(i*n+j+1)])
     }
   }
-  surface-code((4, 0), 15, 7,color1:red,color2:green,size:0.5,type-tag: false)
+  let code2 = surface-code((4, 0), 15, 7, color1: red, color2: green, size: 0.5, type-tag: false)
+  (code2.draw-background)()
   })
 ```
 ![Surface code](examples/surface.png)

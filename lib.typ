@@ -30,22 +30,73 @@
   point-radius: 0.08,
   boundary-bulge: 0.7,
 ) = {
-  import draw: *
+  let params = (
+    loc: loc,
+    m: m,
+    n: n,
+    size: size,
+    color1: color1,
+    color2: color2,
+    name: name,
+    type-tag: type-tag,
+    point-radius: point-radius,
+    boundary-bulge: boundary-bulge,
+  )
+
+  let normalize-qubit-id = (id) => {
+    if type(id) == array {
+      assert(id.len() == 2, message: "Surface qubit id must be (i, j).")
+      str(id.at(0)) + "-" + str(id.at(1))
+    } else {
+      str(id)
+    }
+  }
+
+  let qubit-name = (id) => name + "-" + normalize-qubit-id(id)
+  let qubit-anchor = (id) => (name: (qubit-name)(id), anchor: "center")
+
+  let qubits = ()
   let x0 = loc.at(0)
   let y0 = loc.at(1)
   for i in range(m) {
     for j in range(n) {
       let x = x0 + i * size
       let y = y0 + j * size
-      if (i != m - 1) and (j != n - 1) {
-        // determine the color of the plaquette
-        let (colora, colorb) = if (calc.rem(i + j, 2) == 0) {
-          (color1, color2)
-        } else {
-          (color2, color1)
-        }
-        // four types of boundary plaquettes
-        if type-tag == (calc.rem(i + j, 2) == 0) {
+      qubits += (
+        (
+          id: (i, j),
+          pos: (x, y),
+          name: (qubit-name)((i, j)),
+          meta: (i: i, j: j),
+        ),
+      )
+    }
+  }
+
+  let resolve-qubit = (id) => {
+    let target-id = normalize-qubit-id(id)
+    let found = none
+    for qubit in qubits {
+      if found == none and normalize-qubit-id(qubit.id) == target-id {
+        found = qubit
+      }
+    }
+    found
+  }
+
+  let draw-background = () => {
+    import draw: rect, circle, bezier
+    for i in range(m) {
+      for j in range(n) {
+        let x = x0 + i * size
+        let y = y0 + j * size
+        if (i != m - 1) and (j != n - 1) {
+          let (colora, colorb) = if (calc.rem(i + j, 2) == 0) {
+            (color1, color2)
+          } else {
+            (color2, color1)
+          }
+          if type-tag == (calc.rem(i + j, 2) == 0) {
             if (i == 0) {
               bezier((x, y), (x, y + size), (x - size * boundary-bulge, y + size/2), fill: colorb, stroke: black)
             }
@@ -61,11 +112,28 @@
             }
           }
           rect((x, y), (x + size, y + size), fill: colora, stroke: black, name: name + "-square" + "-" + str(i) + "-" + str(j))
+        }
       }
-      circle((x, y), radius: point-radius * size, fill: black, stroke: none, name: name + "-" + str(i) + "-" + str(j))
     }
+    for qubit in qubits {
+      circle(qubit.pos, radius: point-radius * size, fill: black, stroke: none, name: qubit.name)
     }
   }
+
+  let highlight-qubit = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
+    import draw: circle
+    let qubit = (resolve-qubit)(id)
+    assert(qubit != none, message: "Unknown surface qubit id \"" + normalize-qubit-id(id) + "\".")
+    circle(qubit.pos, radius: if radius == none { point-radius * size } else { radius }, fill: fill, stroke: stroke)
+  }
+
+  (
+    params: params,
+    qubits: qubits,
+    draw-background: draw-background,
+    qubit-anchor: qubit-anchor,
+    highlight-qubit: highlight-qubit,
+  )
 }
 
 #let color-code-2d-render(
