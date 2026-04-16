@@ -1,14 +1,5 @@
-#import "@preview/fig-plucker:0.1.0": *
-#import "@preview/cetz:0.4.0": canvas, draw
+#import "@preview/cetz:0.4.0": draw
 #import "../lib.typ": *
-
-#show: fig-plucker.with(
-  debug: true,
-  output-num: 8,
-)
-
-#set text(font: "New Computer Modern")
-#show math.equation: set text(font: "New Computer Modern Math")
 
 #let soft-red = red.lighten(80%)
 #let soft-green = green.lighten(80%)
@@ -125,8 +116,8 @@
   circle(pos, radius: radius, fill: fill, stroke: (paint: black, thickness: 0.8pt))
 }
 
-#let make-666(name: "obj-666") = color-code-2d(
-  (0, 0),
+#let make-666(loc: (0, 0), name: "obj-666") = color-code-2d(
+  loc,
   tiling: "6.6.6",
   shape: "hex",
   size: (lx: 3, ly: 3, lz: 3),
@@ -140,8 +131,8 @@
   show-qubits: false,
 )
 
-#let make-488(name: "obj-488") = color-code-2d(
-  (0, 0),
+#let make-488(loc: (0, 0), name: "obj-488") = color-code-2d(
+  loc,
   tiling: "4.8.8",
   shape: "rect",
   size: (rows: 3, cols: 3),
@@ -159,9 +150,9 @@
   draw-open-qubits(code)
 }
 
-#let draw-666-basis() = {
+#let draw-666-basis(loc: (0, 0), name: "obj-666-basis") = {
   import draw: *
-  let code = make-666(name: "obj-666-basis")
+  let code = make-666(loc: loc, name: name)
   draw-base(code)
 
   let face = find-face(code, (0, 0))
@@ -182,9 +173,9 @@
   content(qy, anchor: "south", padding: 5pt, text(size: 18pt)[$y$])
 }
 
-#let draw-666-stabilizers() = {
+#let draw-666-stabilizers(loc: (0, 0), name: "obj-666-stabilizers") = {
   import draw: *
-  let code = make-666(name: "obj-666-stabilizers")
+  let code = make-666(loc: loc, name: name)
   draw-base(code)
 
   let face = find-face(code, (0, 0))
@@ -211,9 +202,9 @@
   content(q3, anchor: "east", padding: 10pt, text(size: 16pt)[$vec(#text(fill: cyan-fill)[$1 + x + x y$], #text(fill: magenta-fill)[$1 + y + x y$])$])
 }
 
-#let draw-666-anyon() = {
+#let draw-666-anyon(loc: (0, 0), name: "obj-666-anyon") = {
   import draw: *
-  let code = make-666(name: "obj-666-anyon")
+  let code = make-666(loc: loc, name: name)
   draw-base(code)
 
   let a = find-face(code, (-1, 1)).center
@@ -229,9 +220,9 @@
   content(pt-scale(pt-add(a, c), 0.5), anchor: "north", padding: 15pt, text(size: 16pt)[$x^3 = 1$])
 }
 
-#let draw-666-debug() = {
+#let draw-666-debug(loc: (0, 0), name: "obj-666-debug") = {
   import draw: *
-  let code = make-666(name: "obj-666-debug")
+  let code = make-666(loc: loc, name: name)
   draw-base(code)
 
   for face in code.faces {
@@ -242,9 +233,9 @@
   }
 }
 
-#let draw-488-basis() = {
+#let draw-488-basis(loc: (0, 0), name: "obj-488-basis") = {
   import draw: *
-  let code = make-488(name: "obj-488-basis")
+  let code = make-488(loc: loc, name: name)
   draw-base(code)
 
   let square = find-face(code, (2, 2))
@@ -274,9 +265,9 @@
   label-dot(find-qubit(code, q4).pos, text(size: 14pt)[$4$], fill: magenta-fill)
 }
 
-#let draw-488-stabilizers() = {
+#let draw-488-stabilizers(loc: (0, 0), name: "obj-488-stabilizers") = {
   import draw: *
-  let code = make-488(name: "obj-488-stabilizers")
+  let code = make-488(loc: loc, name: name)
   draw-base(code)
 
   let sq1 = find-face(code, (2, 2))
@@ -338,9 +329,9 @@
   content(right-legend, text(size: 15pt)[$vec(#text(fill: cyan-fill)[$x y$], #text(fill: aqua)[$y$], #text(fill: orange-fill)[$x y$], #text(fill: magenta-fill)[$x$])$])
 }
 
-#let draw-488-anyon() = {
+#let draw-488-anyon(loc: (0, 0), name: "obj-488-anyon") = {
   import draw: *
-  let code = make-488(name: "obj-488-anyon")
+  let code = make-488(loc: loc, name: name)
   draw-base(code)
 
   let a = find-face(code, (1, 3)).center
@@ -356,9 +347,9 @@
   content(pt-scale(pt-add(a, c), 0.5), anchor: "south-east", padding: 10pt, text(size: 16pt)[$x y = 1$])
 }
 
-#let draw-488-debug() = {
+#let draw-488-debug(loc: (0, 0), name: "obj-488-debug") = {
   import draw: *
-  let code = make-488(name: "obj-488-debug")
+  let code = make-488(loc: loc, name: name)
   draw-base(code)
 
   for face in code.faces {
@@ -369,50 +360,41 @@
   }
 }
 
-#fig("666cc-basis")[
-  #canvas({
-    draw-666-basis()
-  })
-]
+#let panel-title(pos, body, size: 12pt) = {
+  import draw: content
+  content(pos, text(size: size)[#body])
+}
 
-#fig("666cc-stabilizers")[
-  #canvas({
-    draw-666-stabilizers()
-  })
-]
+#let draw-666-plot1(loc: (0, 0), gap-x: 11.2, gap-y: 9.8) = {
+  let p00 = loc
+  let p10 = pt-add(loc, (gap-x, 0))
+  let p01 = pt-add(loc, (0, -gap-y))
+  let p11 = pt-add(loc, (gap-x, -gap-y))
 
-#fig("666cc-anyon")[
-  #canvas({
-    draw-666-anyon()
-  })
-]
+  draw-666-basis(loc: p00, name: "obj-666-basis-panel")
+  draw-666-stabilizers(loc: p10, name: "obj-666-stabilizers-panel")
+  draw-666-anyon(loc: p01, name: "obj-666-anyon-panel")
+  draw-666-debug(loc: p11, name: "obj-666-debug-panel")
 
-#fig("666cc-debug")[
-  #canvas({
-    draw-666-debug()
-  })
-]
+  panel-title(pt-add(p00, (0, 4.5)), [basis])
+  panel-title(pt-add(p10, (0, 4.5)), [stabilizers])
+  panel-title(pt-add(p01, (0, 4.5)), [anyon])
+  panel-title(pt-add(p11, (0, 4.5)), [debug])
+}
 
-#fig("488cc-basis")[
-  #canvas({
-    draw-488-basis()
-  })
-]
+#let draw-488-plot1(loc: (0, 0), gap-x: 12.2, gap-y: 11.0) = {
+  let p00 = loc
+  let p10 = pt-add(loc, (gap-x, 0))
+  let p01 = pt-add(loc, (0, -gap-y))
+  let p11 = pt-add(loc, (gap-x, -gap-y))
 
-#fig("488-stabilizers")[
-  #canvas({
-    draw-488-stabilizers()
-  })
-]
+  draw-488-basis(loc: p00, name: "obj-488-basis-panel")
+  draw-488-stabilizers(loc: p10, name: "obj-488-stabilizers-panel")
+  draw-488-anyon(loc: p01, name: "obj-488-anyon-panel")
+  draw-488-debug(loc: p11, name: "obj-488-debug-panel")
 
-#fig("488cc-anyon")[
-  #canvas({
-    draw-488-anyon()
-  })
-]
-
-#fig("488cc-debug")[
-  #canvas({
-    draw-488-debug()
-  })
-]
+  panel-title(pt-add(p00, (0, 6.3)), [basis])
+  panel-title(pt-add(p10, (0, 6.3)), [stabilizers])
+  panel-title(pt-add(p01, (0, 6.3)), [anyon])
+  panel-title(pt-add(p11, (0, 6.3)), [debug])
+}

@@ -113,7 +113,10 @@ The returned object exposes:
 
 For `tiling: "6.6.6"`, supported shapes are `rect`, `para`, `tri`, `tri-cut`, and `hex`. `hex-orientation` can be `"flat"` or `"pointy"` for the non-hex patches (`tri-cut` requires `"flat"`). Tuple shorthand such as `(0, 0)` for faces and `(2, 0)` for qubits is accepted for the simple `6.6.6` and `4.8.8` id schemes.
 
+The bundled `examples/color_code_666.typ` now shows the supported `6.6.6` boundary shapes and orientations without annotations, while `examples/color_code_666_plot1.typ` composes the object API into a plot1-style four-panel figure.
+
 ![2D color code](examples/color_code_666.png)
+![2D color code 6.6.6 plot1](examples/color_code_666_plot1.png)
 
 ## 2D color code (6.6.6 hex patch)
 `shape: "hex"` builds a six-boundary patch with `size: (lx: ..., ly: ..., lz: ...)`.
@@ -168,7 +171,10 @@ The boundary qubits are available via `code.boundaries.qubits`, and the six colo
 
 See `examples/color_code_488_reference.typ` for a reference-style figure that reads the basis vectors directly from the object and annotates one face and one qubit through anchors.
 
+The bundled `examples/color_code_488.typ` now shows the same rectangular `4.8.8` patch under several viewing rotations, and `examples/color_code_488_plot1.typ` composes the basis, stabilizer, anyon, and debug panels on one canvas.
+
 ![2D color code 4.8.8](examples/color_code_488.png)
+![2D color code 4.8.8 plot1](examples/color_code_488_plot1.png)
 ![2D color code 4.8.8 reference](examples/color_code_488_reference.png)
 
 ## 2D color code (4.6.12)
