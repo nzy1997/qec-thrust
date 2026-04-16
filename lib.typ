@@ -1804,19 +1804,68 @@
     name: name,
   )
 
+  let mod-index = (value, modulus) => {
+    let wrapped = calc.rem(value, modulus)
+    if wrapped < 0 { wrapped + modulus } else { wrapped }
+  }
+
   let normalize-qubit-id = (id) => {
     if type(id) == array {
       assert(id.len() == 3, message: "Toric qubit id must be (\"vertical\"|\"horizontal\", i, j).")
       let family = str(id.at(0))
       assert(family == "vertical" or family == "horizontal", message: "Unknown toric qubit family \"" + family + "\".")
-      family + "-" + str(id.at(1)) + "-" + str(id.at(2))
+      family + "-" + str((mod-index)(id.at(1), m)) + "-" + str((mod-index)(id.at(2), n))
     } else {
       str(id)
     }
   }
 
+  let normalize-plaquette-id = (id) => {
+    if type(id) == array {
+      if id.len() == 2 {
+        "plaquette-" + str((mod-index)(id.at(0), m)) + "-" + str((mod-index)(id.at(1), n))
+      } else {
+        assert(id.len() == 3, message: "Toric plaquette id must be (i, j) or (\"plaquette\", i, j).")
+        let family = str(id.at(0))
+        assert(family == "plaquette", message: "Unknown toric plaquette family \"" + family + "\".")
+        "plaquette-" + str((mod-index)(id.at(1), m)) + "-" + str((mod-index)(id.at(2), n))
+      }
+    } else {
+      let id-text = str(id)
+      if id-text.starts-with("plaquette-") {
+        id-text
+      } else {
+        "plaquette-" + id-text
+      }
+    }
+  }
+
+  let normalize-vertex-id = (id) => {
+    if type(id) == array {
+      if id.len() == 2 {
+        "vertex-" + str((mod-index)(id.at(0), m)) + "-" + str((mod-index)(id.at(1), n))
+      } else {
+        assert(id.len() == 3, message: "Toric vertex id must be (i, j) or (\"vertex\", i, j).")
+        let family = str(id.at(0))
+        assert(family == "vertex", message: "Unknown toric vertex family \"" + family + "\".")
+        "vertex-" + str((mod-index)(id.at(1), m)) + "-" + str((mod-index)(id.at(2), n))
+      }
+    } else {
+      let id-text = str(id)
+      if id-text.starts-with("vertex-") {
+        id-text
+      } else {
+        "vertex-" + id-text
+      }
+    }
+  }
+
   let qubit-name = (id) => name + "-point-" + normalize-qubit-id(id)
+  let plaquette-anchor-name = (id) => name + "-plaquette-anchor-" + normalize-plaquette-id(id)
+  let vertex-anchor-name = (id) => name + "-vertex-anchor-" + normalize-vertex-id(id)
   let qubit-anchor = (id) => (name: (qubit-name)(id), anchor: "center")
+  let plaquette-anchor = (id) => (name: (plaquette-anchor-name)(id), anchor: "center")
+  let vertex-anchor = (id) => (name: (vertex-anchor-name)(id), anchor: "center")
 
   let qubits = ()
   for i in range(m) {
@@ -1842,6 +1891,49 @@
     }
   }
 
+  let plaquettes = ()
+  for i in range(m) {
+    for j in range(n) {
+      let x = loc.at(0) + i * size
+      let y = loc.at(1) - j * size
+      plaquettes += (
+        (
+          id: ("plaquette", i, j),
+          center: (x + size / 2, y - size / 2),
+          vertices: ((x, y), (x + size, y), (x + size, y - size), (x, y - size)),
+          qubits: (
+            ("vertical", i, j),
+            ("vertical", i, j + 1),
+            ("horizontal", i + 1, j),
+            ("horizontal", i, j),
+          ),
+          meta: (i: i, j: j),
+        ),
+      )
+    }
+  }
+
+  let vertices = ()
+  for i in range(m) {
+    for j in range(n) {
+      let x = loc.at(0) + i * size
+      let y = loc.at(1) - j * size
+      vertices += (
+        (
+          id: ("vertex", i, j),
+          center: (x, y),
+          qubits: (
+            ("vertical", i - 1, j),
+            ("vertical", i, j),
+            ("horizontal", i, j),
+            ("horizontal", i, j - 1),
+          ),
+          meta: (i: i, j: j),
+        ),
+      )
+    }
+  }
+
   let resolve-qubit = (id) => {
     let target-id = normalize-qubit-id(id)
     let found = none
@@ -1853,14 +1945,42 @@
     found
   }
 
+  let resolve-plaquette = (id) => {
+    let target-id = normalize-plaquette-id(id)
+    let found = none
+    for plaquette in plaquettes {
+      if found == none and normalize-plaquette-id(plaquette.id) == target-id {
+        found = plaquette
+      }
+    }
+    found
+  }
+
+  let resolve-vertex = (id) => {
+    let target-id = normalize-vertex-id(id)
+    let found = none
+    for vertex in vertices {
+      if found == none and normalize-vertex-id(vertex.id) == target-id {
+        found = vertex
+      }
+    }
+    found
+  }
+
   let draw-background = () => {
     import draw: rect, circle
-    for i in range(m) {
-      for j in range(n) {
-        let x = loc.at(0) + i * size
-        let y = loc.at(1) - j * size
-        rect((x, y), (x + size, y - size), fill: color1, stroke: black, name: name + "-square" + "-" + str(i) + "-" + str(j))
-      }
+    for plaquette in plaquettes {
+      rect(
+        plaquette.vertices.at(0),
+        plaquette.vertices.at(2),
+        fill: color1,
+        stroke: black,
+        name: name + "-square" + "-" + str(plaquette.meta.i) + "-" + str(plaquette.meta.j),
+      )
+      circle(plaquette.center, radius: 0, fill: none, stroke: none, name: (plaquette-anchor-name)(plaquette.id))
+    }
+    for vertex in vertices {
+      circle(vertex.center, radius: 0, fill: none, stroke: none, name: (vertex-anchor-name)(vertex.id))
     }
     for qubit in qubits {
       circle(qubit.pos, radius: circle-radius, fill: qubit.color, stroke: (thickness: line-thickness), name: qubit.name)
@@ -1874,12 +1994,73 @@
     circle(qubit.pos, radius: if radius == none { circle-radius } else { radius }, fill: fill, stroke: stroke)
   }
 
+  let highlight-plaquette = (
+    id,
+    fill: yellow,
+    stroke: black,
+    qubit-fill: yellow,
+    qubit-stroke: (thickness: line-thickness),
+    qubit-radius: circle-radius,
+    selected-qubits: none,
+  ) => {
+    import draw: line, circle
+    let plaquette = (resolve-plaquette)(id)
+    assert(plaquette != none, message: "Unknown toric plaquette id \"" + normalize-plaquette-id(id) + "\".")
+    line(..plaquette.vertices, close: true, fill: fill, stroke: stroke)
+    if selected-qubits != none {
+      for qid in plaquette.qubits {
+        let qubit = (resolve-qubit)(qid)
+        assert(qubit != none, message: "Unknown toric qubit id \"" + normalize-qubit-id(qid) + "\".")
+        circle(qubit.pos, radius: qubit-radius, fill: qubit.color, stroke: (thickness: line-thickness))
+      }
+    }
+    let qubit-ids = if selected-qubits == none { plaquette.qubits } else { selected-qubits }
+    for qid in qubit-ids {
+      let qubit = (resolve-qubit)(qid)
+      assert(qubit != none, message: "Unknown toric qubit id \"" + normalize-qubit-id(qid) + "\".")
+      circle(qubit.pos, radius: qubit-radius, fill: qubit-fill, stroke: qubit-stroke)
+    }
+  }
+
+  let highlight-vertex = (
+    id,
+    fill: aqua,
+    stroke: black,
+    marker-radius: circle-radius,
+    qubit-fill: aqua,
+    qubit-stroke: (thickness: line-thickness),
+    qubit-radius: circle-radius,
+    selected-qubits: none,
+  ) => {
+    import draw: rect, circle
+    let vertex = (resolve-vertex)(id)
+    assert(vertex != none, message: "Unknown toric vertex id \"" + normalize-vertex-id(id) + "\".")
+    rect(
+      (vertex.center.at(0) - marker-radius, vertex.center.at(1) - marker-radius),
+      (vertex.center.at(0) + marker-radius, vertex.center.at(1) + marker-radius),
+      fill: fill,
+      stroke: stroke,
+    )
+    let qubit-ids = if selected-qubits == none { vertex.qubits } else { selected-qubits }
+    for qid in qubit-ids {
+      let qubit = (resolve-qubit)(qid)
+      assert(qubit != none, message: "Unknown toric qubit id \"" + normalize-qubit-id(qid) + "\".")
+      circle(qubit.pos, radius: qubit-radius, fill: qubit-fill, stroke: qubit-stroke)
+    }
+  }
+
   (
     params: params,
     qubits: qubits,
+    plaquettes: plaquettes,
+    vertices: vertices,
     draw-background: draw-background,
     qubit-anchor: qubit-anchor,
+    plaquette-anchor: plaquette-anchor,
+    vertex-anchor: vertex-anchor,
     highlight-qubit: highlight-qubit,
+    highlight-plaquette: highlight-plaquette,
+    highlight-vertex: highlight-vertex,
   )
 }
 

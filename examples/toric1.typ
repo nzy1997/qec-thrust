@@ -9,8 +9,8 @@
   let circle-radius = 0.4
   let code = toric-code((0, 0), m, n, size: size, circle-radius: circle-radius)
   (code.draw-background)()
-  plaquette-code-label((0, 0),2,0, size: size, circle-radius: circle-radius)
-  vertex-code-label((0, 0),3,2, size: size, circle-radius: circle-radius)
+  (code.highlight-plaquette)((1, 0))
+  (code.highlight-vertex)((3, 2))
   stabilizer-label((12, -2))
   for i in range(m){
     for j in range(n){

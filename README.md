@@ -37,7 +37,16 @@ You can draw a surface code with different size, color and orientation by `surfa
 ![Surface code](examples/surface.png)
 
 ## Toric code
-You can draw a toric code with different size and color by `toric-code` function. The name of the qubits can be defined with `name` parameter as `name-point-vertical-i-j` and `name-point-horizontal-i-j`. By default, they will begin with `toric`. Here is an example of a toric code with 5x3 size. `plaquette-code-label` and `vertex-code-label` functions can be used to label the plaquette and vertex stabilizers at a specified location. `stabilizer-label` generates a stabilizer legend.
+`toric-code(...)` now returns a reusable object API. Build the object first, call `code.draw-background()`, then annotate through stable helpers.
+
+- `code.qubits`: qubit records with stable ids `("vertical", i, j)` and `("horizontal", i, j)`.
+- `code.plaquettes`: plaquette stabilizer records with stable zero-based cell ids `("plaquette", i, j)`.
+- `code.vertices`: vertex stabilizer records with stable zero-based vertex ids `("vertex", i, j)`.
+- `code.qubit-anchor(id)`, `code.plaquette-anchor(id)`, `code.vertex-anchor(id)`: anchor helpers.
+- `code.highlight-qubit(id, ...)`, `code.highlight-plaquette(id, ...)`, `code.highlight-vertex(id, ...)`: stabilizer/qubit emphasis helpers.
+- `code.highlight-plaquette(..., selected-qubits: (...))` and `code.highlight-vertex(..., selected-qubits: (...))`: override the default support when you want to draw custom BB-code-style operators.
+
+Here is a 5x3 toric example:
 ```typ
 #canvas({
   import draw: *
@@ -45,28 +54,54 @@ You can draw a toric code with different size and color by `toric-code` function
   let n = 3
   let size = 2
   let circle-radius = 0.4
-  toric-code((0, 0), m, n, size: size, circle-radius: circle-radius)
-  plaquette-code-label((0, 0),2,0, size: size, circle-radius: circle-radius)
-  vertex-code-label((0, 0),3,2, size: size, circle-radius: circle-radius)
+  let code = toric-code((0, 0), m, n, size: size, circle-radius: circle-radius)
+  (code.draw-background)()
+  (code.highlight-plaquette)((1, 0))
+  (code.highlight-vertex)((3, 2))
   stabilizer-label((12, -2))
   for i in range(m){
     for j in range(n){
-      content( "toric-point-vertical-" + str(i) + "-" + str(j), [#(i*n+j+1)])
-      content( "toric-point-horizontal-" + str(i) + "-" + str(j), [#(i*n+j+1+m*n)])
+      content((code.qubit-anchor)(("vertical", i, j)), [#(i*n+j+1)])
+      content((code.qubit-anchor)(("horizontal", i, j)), [#(i*n+j+1+m*n)])
     }
   }
 })
 ```
 ![Toric code](examples/toric1.png)
 
-`plaquette-code-label` and `vertex-code-label` functions can be adjusted to change the label of the stabilizers. Here is an example of$〚98,8,12〛$BB code.
+Here is the $〚98,8,12〛$ BB-code style annotation migrated to object helpers:
 
 ```typ
 #canvas({
   import draw: *
-  toric-code((0, 0), 7, 7, size: 1)
-  plaquette-code-label((0, 0),2,4,ver-vec:((-1,0),(2,1),(3,1)),hor-vec:((0,0),(-1,-4),(-1,-3)), size: 1)
-  vertex-code-label((0, 0),6,1,ver-vec:((-1,0),(0,4),(0,3)),hor-vec:((-4,-1),(0,0),(-3,-1)), size: 1)
+  let code = toric-code((0, 0), 7, 7, size: 1)
+  (code.draw-background)()
+  (code.highlight-plaquette)(
+    (1, 4),
+    selected-qubits: (
+      ("vertical", 1, 4),
+      ("vertical", 1, 5),
+      ("horizontal", 2, 4),
+      ("horizontal", 1, 4),
+      ("vertical", 4, 5),
+      ("vertical", 5, 5),
+      ("horizontal", 1, 0),
+      ("horizontal", 1, 1),
+    ),
+  )
+  (code.highlight-vertex)(
+    (6, 1),
+    selected-qubits: (
+      ("vertical", 5, 1),
+      ("vertical", 6, 1),
+      ("horizontal", 6, 1),
+      ("horizontal", 6, 0),
+      ("vertical", 6, 5),
+      ("vertical", 6, 4),
+      ("horizontal", 2, 0),
+      ("horizontal", 3, 0),
+    ),
+  )
   stabilizer-label((10, -3))
 })
 ```
