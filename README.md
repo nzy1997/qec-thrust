@@ -5,16 +5,17 @@ This is a Typst package for visualizing quantum error correction codes.
 
 
 ## Steane code
-You can draw a Steane code by calling the `steane-code` function. The name of the qubits are automatically generated as `steane-1`, `steane-2`, etc.
+`steane-code(...)` now follows the lightweight object-style API too: construct the figure, call `code.draw-background()`, then attach labels with `code.qubit-anchor(id)`. Steane qubit ids stay simple integer labels `1` through `7`.
 ```typ
 #import "@preview/qec-thrust:0.2.0": *
 
 #canvas({
   import draw: *
-  steane-code((0, 0), size: 3)
-    for j in range(7) {
-      content((rel: (0, -0.3), to: "steane-" + str(j+1)), [#(j)])
-    }
+  let code = steane-code((0, 0), size: 3)
+  (code.draw-background)()
+  for j in range(7) {
+    content((rel: (0, -0.3), to: (code.qubit-anchor)(j + 1)), [#(j)])
+  }
 })
 ```
 ![Steane code](examples/steane.png)

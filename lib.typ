@@ -1,21 +1,74 @@
 #import "@preview/cetz:0.4.0": canvas,draw
 
 #let steane-code(loc,size:4, color1:yellow, color2:aqua,color3:olive,name: "steane",point-radius:0.1) = {
-  import draw: *
-  let x = loc.at(0) 
+  let params = (
+    loc: loc,
+    size: size,
+    color1: color1,
+    color2: color2,
+    color3: color3,
+    name: name,
+    point-radius: point-radius,
+  )
+
+  let x = loc.at(0)
   let y = loc.at(1)
   let locp-vec = ((x - calc.sqrt(3)*size/2,y  - size/2),(x,y - size/2),(x + calc.sqrt(3)*size/2,y  - size/2),(x,y + size),(x - calc.sqrt(3)*size/4,y + size/4),(x + calc.sqrt(3)*size/4,y + size/4),(x,y))
+
+  let qubit-name = (id) => name + "-" + str(id)
+  let qubit-anchor = (id) => (name: (qubit-name)(id), anchor: "center")
+
+  let qubits = ()
   for (i, locp) in locp-vec.enumerate() {
-    circle(locp, radius: point-radius, fill: black, stroke: none, name: name + "-" + str(i + 1))
+    qubits += (
+      (
+        id: i + 1,
+        pos: locp,
+        name: (qubit-name)(i + 1),
+      ),
+    )
   }
 
-  for ((i,j,k,l),color) in (((1,2,7,5),color1),((2,3,6,7),color2),((4,5,7,6),color3)) {
-    line(name + "-" + str(i), name + "-" + str(j), name + "-" + str(k), name + "-" + str(l), name + "-" + str(i), fill: color)
+  let resolve-qubit = (id) => {
+    let target-id = str(id)
+    let found = none
+    for qubit in qubits {
+      if found == none and str(qubit.id) == target-id {
+        found = qubit
+      }
+    }
+    found
   }
 
-  for (i, locp) in locp-vec.enumerate() {
-    circle(locp, radius: point-radius, fill: black, stroke: none)
+  let draw-background = () => {
+    import draw: circle, line
+    for qubit in qubits {
+      circle(qubit.pos, radius: point-radius, fill: black, stroke: none, name: qubit.name)
+    }
+
+    for ((i,j,k,l),color) in (((1,2,7,5),color1),((2,3,6,7),color2),((4,5,7,6),color3)) {
+      line((qubit-name)(i), (qubit-name)(j), (qubit-name)(k), (qubit-name)(l), (qubit-name)(i), fill: color)
+    }
+
+    for qubit in qubits {
+      circle(qubit.pos, radius: point-radius, fill: black, stroke: none)
+    }
   }
+
+  let highlight-qubit = (id, radius: none, fill: none, stroke: (paint: red, thickness: 1pt)) => {
+    import draw: circle
+    let qubit = (resolve-qubit)(id)
+    assert(qubit != none, message: "Unknown Steane qubit id \"" + str(id) + "\".")
+    circle(qubit.pos, radius: if radius == none { point-radius } else { radius }, fill: fill, stroke: stroke)
+  }
+
+  (
+    params: params,
+    qubits: qubits,
+    draw-background: draw-background,
+    qubit-anchor: qubit-anchor,
+    highlight-qubit: highlight-qubit,
+  )
 }
 
 #let surface-code(
